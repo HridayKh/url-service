@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" data-theme="dark" th:fragment="main-layout(head, content, foot)">
+
+<head>
+	<style>
+		html {
+			background-color: rgb(19, 22.5, 30.5);
+		}
+	</style>
+	<link rel="stylesheet" href="/css/pico.fluid.classless.fuchsia-2.1.1.css">
+	<link rel="stylesheet" href="/css/styles.css">
+</head>
+
+<body style="text-align: center;">
+	<header>
+		<nav>
+			<ul>
+				<li><a href="/">
+						<h1>Urls.HridayKh.in</h1>
+					</a></li>
+				<li><a href="https://HridayKh.in/">By HridayKh.in</a></li>
+			</ul>
+			<ul th:insert="${head}"></ul>
+		</nav>
+	</header>
+
+	<main th:insert="${content}"></main>
+
+	<footer th:insert="${foot}"></footer>
+
+	<script defer src="/js/htmx-2.0.8.js"></script>
+	<script defer src="/js/hyperscript-0.9.12.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,30 @@
+<div id="shorten-url-result">
+	<!--QR Builder-->
+	<section id="shorten-url-output">
+		<p>
+			<a th:href="${shortenedUrl}" class="text-sz-2">
+				<i><strong th:text="${shortenedUrl}">URL PLACEHOLDER</strong></i>
+			</a>
+			<br />
+			<small>
+				<a href="/login">Login</a> or <a href="/register">Register</a>
+				to customize the short url.
+				<br />
+				<sub>
+					Generated url will expire after 365 days of no usage,
+					<a href="/login">Login</a> or <a href="/register">Register</a>
+					to change that!
+				</sub>
+			</small>
+		</p>
+	</section>
+
+	<!--QR Builder-->
+	<section id="qr-code">
+		<!--TODO IMPLEMENT QRS-->
+		<div class="qr-placeholder" style="border: 1px dashed var(--pico-primary); padding: 20px;">
+			<h3>LIVE QR UI</h3>
+			<p>Ready for Styling via Query Params</p>
+		</div>
+	</section>
+</div>

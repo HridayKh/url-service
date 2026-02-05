@@ -1,0 +1,68 @@
+name: Release and Deploy Native Spring Boot
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  release-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '25' # or your preferred version
+          distribution: 'graalvm-community'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Remove SNAPSHOT and Set Release Version
+        run: |
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          RELEASE_VERSION=${CURRENT_VERSION%-SNAPSHOT}
+          mvn versions:set -DnewVersion=$RELEASE_VERSION
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
+
+      - name: Build Native Image
+        run: mvn -Pnative native:compile
+
+      - name: Commit and Tag Release
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add pom.xml
+          git commit -m "chore: release version ${{ env.RELEASE_VERSION }}"
+          git tag v${{ env.RELEASE_VERSION }}
+          
+      - name: Prepare Next Snapshot Version
+        run: |
+          # Logic to increment patch version: 1.0.0 -> 1.0.1-SNAPSHOT
+          NEXT_VERSION=$(echo ${{ env.RELEASE_VERSION }} | awk -F. '{$NF = $NF + 1;} 1' | sed 's/ /./g')-SNAPSHOT
+          mvn versions:set -DnewVersion=$NEXT_VERSION
+          git add pom.xml
+          git commit -m "chore: prepare for next development iteration [$NEXT_VERSION]"
+          git push origin main --tags
+
+      - name: Deploy to Remote Server (SCP)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "target/${{ github.event.repository.name }}"
+          target: "/opt/myapp/bin"
+          strip_components: 1
+
+      - name: Restart Application via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo systemctl restart my-spring-app
