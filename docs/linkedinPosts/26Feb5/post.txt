@@ -1,0 +1,29 @@
+Built the **first version*- of a URL shortener today and put it live.
+
+It’s not “done” yet — it doesn’t even shorten URLs properly *yet- — but it exists, runs, and is deployed.
+
+Stack I used (all first-time for me):
+
+- **Spring Boot** (moving from Quarkus)
+- **Thymeleaf** for server-rendered templates
+- **HTMX** for interactivity (moving from React)
+- **Hyperscript** for small UI behaviors (loading states, etc.)
+- **PicoCSS** with a pink/magenta theme
+
+The app is already:
+- server-rendered
+- interactive without a SPA
+- deployed as a **GraalVM native image**
+
+Live demo: https://urls.hridaykh.in
+Github: https://github.com/HridayKh/url-service
+
+Next steps:
+
+- proper shortening logic + DB
+- CI/CD
+- then user accounts
+
+Sharing this early to document the build, tradeoffs, and mistakes as I go.
+
+If you’ve built similar infra, I’d love to hear what broke first for you.
