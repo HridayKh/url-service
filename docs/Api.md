@@ -41,7 +41,6 @@
 - **user_id**: Bigint, foreign key to User(id), nullable for anonymous URLs
 - **original_url**: Text
 - **short_url**: Varchar(16), unique
-- **url_type**: ENUM('STANDARD', 'PASSWORD', 'VANITY'), default 'STANDARD'
 - **password_hash**: Varchar(255), nullable
 - **qr_metadata**: jsonb, nullable
 - **expiry_type**: ENUM('NONE', 'TIME', 'USAGE', 'INACTIVITY'), default 'NONE'
