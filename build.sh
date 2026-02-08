@@ -1,0 +1,1 @@
+./mvnw native:compile -Pnative
