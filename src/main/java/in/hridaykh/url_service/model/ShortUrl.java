@@ -116,4 +116,26 @@ public class ShortUrl {
 		this.clickCount++;
 	}
 
+	public boolean isExpired() {
+		switch (expiryType) {
+			case TIME:
+				return expiryTime != null && LocalDateTime.now().isAfter(expiryTime);
+			case USAGE:
+				return expiryMaxClicks != null && clickCount >= expiryMaxClicks;
+			case INACTIVITY:
+				return lastClickedAt != null && expiryInactivityDurationSeconds != null
+						&& lastClickedAt.plusSeconds(expiryInactivityDurationSeconds)
+								.isBefore(LocalDateTime.now());
+			default:
+				return false;
+		}
+	}
+
+	public void markAsDeleted(DeleteReason deleteReason) {
+		this.isDeleted = true;
+		this.isActive = false;
+		this.deletedAt = LocalDateTime.now();
+		this.deleteReason = deleteReason;
+	}
+
 }

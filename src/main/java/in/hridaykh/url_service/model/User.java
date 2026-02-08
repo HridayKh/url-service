@@ -1,7 +1,6 @@
 package in.hridaykh.url_service.model;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -10,7 +9,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
@@ -26,10 +24,13 @@ public class User {
 	@Column(unique = true, nullable = false)
 	private String email;
 
-	private String profilePicture; // No @Column needed if name/defaults match
+	@Column
+	private String profilePicture;
 
+	@Column
 	private boolean isDeleted = false;
 
+	@Column
 	private LocalDateTime deletedAt;
 
 	@CreationTimestamp
