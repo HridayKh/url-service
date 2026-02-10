@@ -1,5 +1,5 @@
 You don’t “add login” to a system.
-You decide 𝐰𝐡𝐨 𝐭𝐡𝐞 𝐬𝐲𝐬𝐭𝐞𝐦 𝐭𝐫𝐮𝐬𝐭𝐬 — and how long that trust survives.
+You decide 𝐰𝐡𝐨 𝐭𝐡𝐞 𝐬𝐲𝐬𝐭𝐞𝐦 𝐭𝐫𝐮𝐬𝐭𝐬, and how long that trust survives.
 
 Today’s work was about turning identity from a loose idea into something the system can stand on.
 
@@ -27,8 +27,8 @@ The project happens to be a URL service, but this is the part that decides wheth
 
 Next steps are about tightening trust even more:
 • Killing tokens cleanly on logout
-• Removing string-based assumptions around cookies
-• Adding more login providers without changing the rules
-• Making token handling boring and predictable
+• Adding more login providers
+• Dynamic Urls with custom expiry settings
 
 That’s how you build systems that scale in people and complexity, by making trust explicit before it becomes expensive.
+Do 𝐲𝐨𝐮 treat trust as a feature — or as a foundation?

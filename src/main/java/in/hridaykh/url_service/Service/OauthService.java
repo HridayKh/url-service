@@ -52,8 +52,6 @@ public class OauthService {
 			case GITHUB -> authorizationUrl = "https://github.com/login/oauth/authorize?client_id="
 					+ githubProps.clientId() +
 					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GITHUB&scope=user:email&state=";
-			case GOOGLE -> authorizationUrl = "";
-			case DISCORD -> authorizationUrl = "";
 		}
 		String state = oauthUtils.generateState();
 		long expiryTime = System.currentTimeMillis() + Duration.ofMinutes(10).toMillis();
@@ -76,12 +74,6 @@ public class OauthService {
 				System.out.println("\n\nFetched User Info: " + userDto);
 				break;
 			}
-			// case GOOGLE: {
-			// 	break;
-			// }
-			// case DISCORD: {
-			// 	break;
-			// }
 		}
 		if (userDto == null)
 			throw new RuntimeException("Failed to fetch user info from provider");
