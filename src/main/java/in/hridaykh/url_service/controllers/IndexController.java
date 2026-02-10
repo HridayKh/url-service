@@ -11,11 +11,13 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import in.hridaykh.url_service.Service.UrlService;
+import in.hridaykh.url_service.config.ViewRegistry;
+import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 
 @Controller
 public class IndexController {
 
-	private List<String> domainsList = new ArrayList<>(List.of("urls.hridaykh.in/"));
+	private List<String> domainsList = new ArrayList<>(List.of("urls.hridaykh.in"));
 	private final UrlService urlService;
 
 	public IndexController(UrlService urlService) {
@@ -25,19 +27,18 @@ public class IndexController {
 	@GetMapping("/")
 	public String index(Model model) {
 		model.addAttribute("domainsList", domainsList);
-		return "main-home";
+		return ViewRegistry.mainHome;
 	}
 
 	@PostMapping("/shorten")
 	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
 		String shortUrlCode = urlService.createAnonShortUrl(originalUrl).getShortUrl();
 
-		String shortUrl = domain + "/" + shortUrlCode;
-		String shortUrlLink = "https://" + shortUrl;
+		ShortenUrlResponseDTO result = new ShortenUrlResponseDTO(domain + "/" + shortUrlCode,
+				"https://" + domain + "/" + shortUrlCode);
 
-		model.addAttribute("shortenedUrlDisplay", shortUrl);
-		model.addAttribute("shortenedUrlLink", shortUrlLink);
-		return "fragments/result :: #shorten-url-result";
+		model.addAttribute("result", result);
+		return ViewRegistry.Fragments.MainHomeResult.shortenUrlResult;
 	}
 
 	@GetMapping("/{shortUrlCode}")

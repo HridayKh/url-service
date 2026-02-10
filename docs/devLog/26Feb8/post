@@ -1,0 +1,32 @@
+𝐌𝐨𝐬𝐭 𝐛𝐚𝐜𝐤𝐞𝐧𝐝 𝐩𝐫𝐨𝐣𝐞𝐜𝐭𝐬 𝐝𝐨𝐧’𝐭 𝐛𝐫𝐞𝐚𝐤 𝐮𝐧𝐝𝐞𝐫 𝐥𝐨𝐚𝐝 — 𝐭𝐡𝐞𝐲 𝐛𝐫𝐞𝐚𝐤 𝐮𝐧𝘥𝐞𝐫 𝐚𝐦𝐛𝐢𝐠𝐮𝐢𝐭𝐲.
+
+Not 𝘱𝘦𝘳𝘧𝘰𝘳𝘮𝘢𝘯𝘤𝘦 issues.
+Not 𝘴𝘤𝘢𝘭𝘪𝘯𝘨.
+But 𝐮𝐧𝐝𝐞𝐟𝐢𝐧𝐞𝐝 𝐛𝐞𝐡𝐚𝐯𝐢𝐨𝐫 when things go 𝘴𝘭𝘪𝘨𝘩𝘵𝘭𝘺 wrong.
+
+What happens when:
+•  Input is technically valid but semantically wrong?
+•  A resource exists but violates an invariant?
+•  A request fails halfway through the lifecycle?
+
+Early on, I noticed these cases leaking through controllers, services, and views in inconsistent ways. That’s fine for demos but it’s poison for systems you want to reason about.
+
+So I paused feature work and fixed the failure model.
+
+In this case, the project happens to be a URL shortener, Simple at first sight but a hundred ways it can break.
+
+What changed:
+1. Explicit domain-level exceptions instead of generic runtime errors
+2. A central exception-handling filter so failures have a single, predictable exit path
+3. Validation and code generation moved into dedicated utilities instead of ad-hoc logic
+4. Custom error pages with a shared layout and minimal CSS — errors are part of the product, not an afterthought
+
+The result isn’t more features.
+It’s a system where I can explain why a request failed by reading the code.
+
+
+That’s the bar I want before adding users, auth, or scale.
+Live: https://urls.HridayKh.in
+Repo: https://github.com/url-service
+
+Do you model failure modes early — or wait until production forces the conversation?

@@ -6,8 +6,8 @@
 	<th:block th:if="${errorMessage == null}">
 		<section id="shorten-url-output">
 			<p>
-				<a th:href="${shortenedUrlLink}" class="text-sz-2">
-					<i><strong th:text="${shortenedUrlDisplay}">URL PLACEHOLDER</strong></i>
+				<a th:href="${result.fullLink}" class="text-sz-2">
+					<i><strong th:text="${result.displayUrl}">URL PLACEHOLDER</strong></i>
 				</a>
 				<br />
 				<small>

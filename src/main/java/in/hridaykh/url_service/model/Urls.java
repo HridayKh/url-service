@@ -26,7 +26,7 @@ import java.util.Map;
 @Table(name = "urls", indexes = {
 		@Index(name = "idx_short_url", columnList = "short_url", unique = true)
 })
-public class ShortUrl {
+public class Urls {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +34,7 @@ public class ShortUrl {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
-	private User user;
+	private Users user;
 
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String originalUrl;
@@ -116,26 +116,30 @@ public class ShortUrl {
 		this.clickCount++;
 	}
 
-	public boolean isExpired() {
+	public boolean isExpired(LocalDateTime now) {
 		switch (expiryType) {
 			case TIME:
-				return expiryTime != null && LocalDateTime.now().isAfter(expiryTime);
+				return expiryTime != null && now.isAfter(expiryTime);
 			case USAGE:
 				return expiryMaxClicks != null && clickCount >= expiryMaxClicks;
 			case INACTIVITY:
 				return lastClickedAt != null && expiryInactivityDurationSeconds != null
 						&& lastClickedAt.plusSeconds(expiryInactivityDurationSeconds)
-								.isBefore(LocalDateTime.now());
+								.isBefore(now);
 			default:
 				return false;
 		}
 	}
 
-	public void markAsDeleted(DeleteReason deleteReason) {
+	public void markAsDeleted(LocalDateTime now, DeleteReason deleteReason) {
 		this.isDeleted = true;
 		this.isActive = false;
-		this.deletedAt = LocalDateTime.now();
+		this.deletedAt = now;
 		this.deleteReason = deleteReason;
+	}
+
+	public boolean isDeleted() {
+		return isDeleted;
 	}
 
 }

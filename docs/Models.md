@@ -1,11 +1,6 @@
-# Api and Database Documentation
+# Database Table Models
 
-> Note: All datetime fields are in UTC.
-> Note: All names are snake_case in the database but camelCase everywhere else.
-
-## Objects
-
-### User
+## User
 
 - **id**: Bigint, auto-increment
 - **name**: Varchar(255), unique
@@ -15,14 +10,15 @@
 - **deleted_at**: Datetime, nullable
 - **created_at**: Datetime, default current timestamp
 
-### user_jwt_tokens
+## user_sessions
 
 - **id**: Bigint, auto-increment
 - **user_id**: Bigint, foreign key to User(id)
 - **refresh_token**: Text
+- **expires_at**: Datetime
 - **created_at**: Datetime, default current timestamp
 
-### oauth_providers
+## oauth_providers
 
 - **id**: Bigint, auto-increment
 - **user_id**: Bigint, foreign key to User(id)
@@ -31,11 +27,7 @@
 - **provider_pfp**: Varchar(255), nullable
 - **created_at**: Datetime, default current timestamp
 
-#### Constraints
-
-- Unique(user_id, provider_name)
-
-### Url
+## Url
 
 - **id**: Bigint, auto-increment
 - **user_id**: Bigint, foreign key to User(id), nullable for anonymous URLs
@@ -55,26 +47,9 @@
 - **delete_reason**: ENUM('USER_REQUEST', 'EXPIRED', 'VIOLATION', 'UNKNOWN'), nullable
 - **created_at**: Datetime, default current timestamp
 
-#### Index
+### Index
 
 - short_url
 - user_id
 - is_deleted
 - is_active
-
-## Endpoints
-
-> To be decided later due to heavy usage of Htmx and html based endpoints.
-
-<!-- ### Short Url Redirects
-
-- **GET /{`shortUrlId`}**: Redirect to the original URL if valid.
-
-### Authentication
-
-> Uses OAuth 2.0 for third-party authentication, to be decided later.
-
-### URL Management
-
-- **GET /api/v1/urls**: Retrieve a list of shortened URLs for the authenticated user with offset pagination.
-- **POST /api/v1/urls**: Create a new shortened URL. -->

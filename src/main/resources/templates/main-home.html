@@ -1,11 +1,14 @@
 <!DOCTYPE html>
-<html
-	th:replace="~{fragments/layout :: main-layout(~{::short-url-header}, ~{::short-url-main}, ~{::short-url-footer})}">
+<html th:replace="~{fragments/layout :: main-layout(
+			~{::short-url-header},
+			~{::short-url-main},
+			~{::short-url-footer}
+		)}">
 
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
-	<li><a href="/login">Login</a></li>
-	<li><a href="/register">Register</a></li>
+	<li><a href="/oauth">Login</a></li>
+	<li><a href="/oauth">Register</a></li>
 </th:block>
 
 <!--Main content-->

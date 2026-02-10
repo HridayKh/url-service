@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import in.hridaykh.url_service.exceptions.ExpiredUrlException;
 import in.hridaykh.url_service.exceptions.InvalidUrlException;
 import in.hridaykh.url_service.exceptions.NotFoundUrlException;
-import in.hridaykh.url_service.model.ShortUrl;
+import in.hridaykh.url_service.model.Urls;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.repository.ShortUrlRepository;
@@ -25,10 +25,10 @@ public class UrlService {
 	}
 
 	@Transactional
-	public ShortUrl createAnonShortUrl(String originalUrl) throws InvalidUrlException {
+	public Urls createAnonShortUrl(String originalUrl) throws InvalidUrlException {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
-		ShortUrl url = new ShortUrl();
+		Urls url = new Urls();
 		url.setOriginalUrl(originalUrl);
 		url.setShortUrl(UrlUtils.generateUniqueCode());
 		url.setExpiryType(ExpiryType.INACTIVITY);
@@ -41,11 +41,14 @@ public class UrlService {
 
 	@Transactional
 	public String getOriginalUrl(String shortUrlCode) {
-		ShortUrl url = urlRepository.findByShortUrl(shortUrlCode)
+		Urls url = urlRepository.findByShortUrl(shortUrlCode)
 				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
 
-		if (url.isExpired()) {
-			url.markAsDeleted(DeleteReason.EXPIRED);
+		if (url.isDeleted())
+			throw new NotFoundUrlException(shortUrlCode);
+
+		if (url.isExpired(LocalDateTime.now())) {
+			url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
 			urlRepository.save(url);
 			throw new ExpiredUrlException(shortUrlCode);
 		}
@@ -56,6 +59,5 @@ public class UrlService {
 
 		return url.getOriginalUrl();
 	}
-
 
 }
