@@ -7,21 +7,22 @@
 
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
-	<li _="on click 
-	add @open to #providerListModal
-	set innerText of #auth-type to 'Login'">
-		<a href="#"> Login </a>
-	</li>
-	<li _="on click 
-	add @open to #providerListModal
-	set innerText of #auth-type to 'Register'">
-		<a href="#"> Register </a>
-	</li>
+	<li><a href="/urls/new" role="button">New +</a></li>
+	<li><a href="/oauth/logout">Logout</a></li>
+	<li><img th:src="${userPfp}" width="50px" /></li>
 </th:block>
 
 <!--Main content-->
 <th:block th:fragment="short-url-main">
+	<section>
+		<h1>
+			Hello User id: <i th:text="${userId}">12</i>!
+		</h1>
+		<p>This is JWT and stateless JWT data extraction in action!</p>
+		<p>Using refresh token to refresh the JWT is under progresses.</p>
+	</section>
 	<section id="shorten-url-input">
+		<!--Doing normal anon urls for now-->
 		<form role="group" hx-post="/urls/new-anon" hx-target="#shorten-url-result" hx-swap="outerHTML"
 			hx-indicator="#shorten-url-result"
 			_="on htmx:beforeRequest add [@aria-busy=true] to #shorten-url-result">
@@ -40,24 +41,6 @@
 
 	<section id="shorten-url-result">
 		<ins>Ready to shorten your first link!</ins>
-	</section>
-
-	<section id="auth-modal">
-		<dialog id="providerListModal" _="on mutation of @open if @open trigger loadProviders end"
-			hx-get="/oauth" hx-trigger="loadProviders" hx-target="#providerList" data-auth-type="login">
-			<article>
-				<header>
-					<button aria-label="Close" rel="prev"
-						_="on click remove @open from #providerListModal"></button>
-					<p>
-						<strong id="auth-type"></strong>
-					</p>
-				</header>
-				<ul id="providerList">
-					<p>Loading providers...</p>
-				</ul>
-			</article>
-		</dialog>
 	</section>
 </th:block>
 

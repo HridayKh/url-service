@@ -1,8 +1,9 @@
-package in.hridaykh.url_service.model;
+package in.hridaykh.url_service.model.tables;
 
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
+import org.jspecify.annotations.Nullable;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,12 +15,17 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "users")
 public class Users {
+	public Users() {
+	}
+
+	public Users(String email, String profilePicture) {
+		this.email = email;
+		this.profilePicture = profilePicture;
+	}
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-
-	@Column(unique = true, nullable = false)
-	private String name;
 
 	@Column(unique = true, nullable = false)
 	private String email;
@@ -37,4 +43,15 @@ public class Users {
 	@Column(updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 
+	public long getId() {
+		return id;
+	}
+
+	public String getProfilePicture() {
+		return this.profilePicture;
+	}
+
+	public @Nullable String getEmail() {
+		return this.email;
+	}
 }

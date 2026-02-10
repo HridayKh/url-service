@@ -1,4 +1,4 @@
-package in.hridaykh.url_service.model;
+package in.hridaykh.url_service.model.tables;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

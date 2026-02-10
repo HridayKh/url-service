@@ -1,0 +1,34 @@
+You don’t “add login” to a system.
+You decide 𝐰𝐡𝐨 𝐭𝐡𝐞 𝐬𝐲𝐬𝐭𝐞𝐦 𝐭𝐫𝐮𝐬𝐭𝐬 — and how long that trust survives.
+
+Today’s work was about turning identity from a loose idea into something the system can stand on.
+
+Once a request has a user behind it, small questions stop being small:
+• What exactly leaves the server after login?
+• What dies on logout — immediately, not eventually?
+• What survives a refresh, a retry, or a half-failed request?
+
+So instead of UI or features, I worked on the machinery underneath.
+
+𝐖𝐡𝐚𝐭 𝐜𝐡𝐚𝐧𝐠𝐞𝐝
+• Requests now cross a clear boundary — controllers return 𝐬𝐡𝐚𝐩𝐞𝐝 𝐫𝐞𝐬𝐩𝐨𝐧𝐬𝐞𝐬, not raw internals
+• Users, tokens, and login methods are 𝐟𝐢𝐫𝐬𝐭-𝐜𝐥𝐚𝐬𝐬 𝐝𝐚𝐭𝐚, not side effects
+• Login flows are explicit: start → callback → issue token → trust expires
+• Tokens are signed, scoped, and treated as temporary permission — not identity itself
+• View routing is centralized so auth doesn’t leak through random paths
+• Naming rules written down, so meaning doesn’t drift as the system grows
+
+From the outside, nothing looks different.
+From the inside, every request now answers one question clearly:
+
+𝐖𝐡𝐨 𝐢𝐬 𝐭𝐡𝐢𝐬, 𝐚𝐧𝐝 𝐰𝐡𝐲 𝐬𝐡𝐨𝐮𝐥𝐝 𝐈 𝐭𝐫𝐮𝐬𝐭 𝐭𝐡𝐞𝐦 𝐫𝐢𝐠𝐡𝐭 𝐧𝐨𝐰?
+
+The project happens to be a URL service, but this is the part that decides whether bigger things are even possible.
+
+Next steps are about tightening trust even more:
+• Killing tokens cleanly on logout
+• Removing string-based assumptions around cookies
+• Adding more login providers without changing the rules
+• Making token handling boring and predictable
+
+That’s how you build systems that scale in people and complexity, by making trust explicit before it becomes expensive.

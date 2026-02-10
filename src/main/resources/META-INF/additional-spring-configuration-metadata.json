@@ -1,0 +1,19 @@
+{
+	"properties": [
+		{
+			"name": "oauth.sign-key",
+			"type": "java.lang.String",
+			"description": "A description for 'oauth.sign-key'"
+		},
+		{
+			"name": "oauth.github.client-id",
+			"type": "java.lang.String",
+			"description": "A description for 'oauth.github.client-id'"
+		},
+		{
+			"name": "oauth.github.client-secret",
+			"type": "java.lang.String",
+			"description": "A description for 'oauth.github.client-secret'"
+		}
+	]
+}

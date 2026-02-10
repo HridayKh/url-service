@@ -1,3 +1,14 @@
+Hibernate: 
+    create table oauth_providers (
+        created_at datetime(6) not null,
+        id bigint not null auto_increment,
+        provider_user_id bigint not null,
+        user_id bigint,
+        provider_pfp varchar(255),
+        provider_name enum ('DISCORD','GITHUB','GOOGLE'),
+        primary key (id)
+    ) engine=InnoDB
+Hibernate: 
     create table urls (
         click_count integer not null,
         expiry_max_clicks integer,
@@ -19,13 +30,20 @@
         primary key (id)
     ) engine=InnoDB
 Hibernate: 
+    create table user_sessions (
+        created_at datetime(6) not null,
+        id bigint not null auto_increment,
+        user_id bigint,
+        refresh_token varchar(255) not null,
+        primary key (id)
+    ) engine=InnoDB
+Hibernate: 
     create table users (
-        is_deleted bit not null,
+        is_deleted bit,
         created_at datetime(6) not null,
         deleted_at datetime(6),
         id bigint not null auto_increment,
         email varchar(255) not null,
-        name varchar(255) not null,
         profile_picture varchar(255),
         primary key (id)
     ) engine=InnoDB
@@ -36,10 +54,17 @@ Hibernate:
     alter table users 
        add constraint UK6dotkott2kjsp8vw4d0m25fb7 unique (email)
 Hibernate: 
-    alter table users 
-       add constraint UK3g1j96g94xpk3lpxl2qbl985x unique (name)
+    alter table oauth_providers 
+       add constraint FKjm6xdbkpwi6ejep2u3rh3nlri 
+       foreign key (user_id) 
+       references users (id)
 Hibernate: 
     alter table urls 
        add constraint FK31nbxw9e1inas1lmdkwxqv10 
+       foreign key (user_id) 
+       references users (id)
+Hibernate: 
+    alter table user_sessions 
+       add constraint FK8klxsgb8dcjjklmqebqp1twd5 
        foreign key (user_id) 
        references users (id)

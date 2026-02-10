@@ -3,7 +3,6 @@
 ## User
 
 - **id**: Bigint, auto-increment
-- **name**: Varchar(255), unique
 - **email**: Varchar(255), unique
 - **profile_picture**: Varchar(255), nullable
 - **is_deleted**: Boolean, default false

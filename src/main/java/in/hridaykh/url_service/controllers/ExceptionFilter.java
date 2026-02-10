@@ -8,6 +8,7 @@ import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.exceptions.ExpiredUrlException;
 import in.hridaykh.url_service.exceptions.InvalidUrlException;
 import in.hridaykh.url_service.exceptions.NotFoundUrlException;
+import in.hridaykh.url_service.exceptions.StateGenerationException;
 
 @ControllerAdvice
 public class ExceptionFilter {
@@ -26,6 +27,12 @@ public class ExceptionFilter {
 
 	@ExceptionHandler(NotFoundUrlException.class)
 	public String handleNotFoundUrlException(NotFoundUrlException ex, Model model) {
+		model.addAttribute("errorMessage", ex.getMessage());
+		return ViewRegistry.error;
+	}
+
+	@ExceptionHandler(StateGenerationException.class)
+	public String handleStateGenerationException(StateGenerationException ex, Model model) {
 		model.addAttribute("errorMessage", ex.getMessage());
 		return ViewRegistry.error;
 	}

@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import in.hridaykh.url_service.model.Urls;
+import in.hridaykh.url_service.model.tables.Urls;
 
 @Repository
 public interface ShortUrlRepository extends JpaRepository<Urls, Long> {
