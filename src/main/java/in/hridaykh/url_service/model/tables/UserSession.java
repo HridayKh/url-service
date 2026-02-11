@@ -16,11 +16,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "user_sessions")
-public class UserSessions {
+public class UserSession {
 
-	public UserSessions() {
+	public UserSession() {
 	}
-	public UserSessions(Users user, String refreshToken) {
+	public UserSession(User user, String refreshToken) {
 		this.user = user;
 		this.refreshToken = refreshToken;
 	}
@@ -31,7 +31,7 @@ public class UserSessions {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
-	private Users user;
+	private User user;
 
 	@Column(nullable = false)
 	private String refreshToken;

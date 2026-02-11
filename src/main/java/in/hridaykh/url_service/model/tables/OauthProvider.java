@@ -19,11 +19,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "oauth_providers")
-public class OauthProviders {
-	public OauthProviders() {
+public class OauthProvider {
+	public OauthProvider() {
 	}
 
-	public OauthProviders(Users user, OauthProviderNames providerName, long providerUserId, String providerPfp) {
+	public OauthProvider(User user, OauthProviderNames providerName, long providerUserId, String providerPfp) {
 		this.user = user;
 		this.providerName = providerName;
 		this.provider_user_id = providerUserId;
@@ -36,7 +36,7 @@ public class OauthProviders {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
-	private Users user;
+	private User user;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "provider_name")

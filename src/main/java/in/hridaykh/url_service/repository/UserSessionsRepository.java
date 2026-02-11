@@ -3,9 +3,9 @@ package in.hridaykh.url_service.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import in.hridaykh.url_service.model.tables.UserSessions;
+import in.hridaykh.url_service.model.tables.UserSession;
 
 @Repository
-public interface UserSessionsRepository extends JpaRepository<UserSessions, Long> { 
+public interface UserSessionsRepository extends JpaRepository<UserSession, Long> { 
 	
 }

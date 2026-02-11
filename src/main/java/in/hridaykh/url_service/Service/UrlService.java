@@ -10,7 +10,7 @@ import in.hridaykh.url_service.exceptions.InvalidUrlException;
 import in.hridaykh.url_service.exceptions.NotFoundUrlException;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
-import in.hridaykh.url_service.model.tables.Urls;
+import in.hridaykh.url_service.model.tables.Url;
 import in.hridaykh.url_service.repository.ShortUrlRepository;
 import in.hridaykh.url_service.utils.UrlUtils;
 import jakarta.transaction.Transactional;
@@ -25,10 +25,10 @@ public class UrlService {
 	}
 
 	@Transactional
-	public Urls createAnonShortUrl(String originalUrl) throws InvalidUrlException {
+	public Url createAnonShortUrl(String originalUrl) throws InvalidUrlException {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
-		Urls url = new Urls();
+		Url url = new Url();
 		url.setOriginalUrl(originalUrl);
 		url.setShortUrl(UrlUtils.generateUniqueCode());
 		url.setExpiryType(ExpiryType.INACTIVITY);
@@ -41,7 +41,7 @@ public class UrlService {
 
 	@Transactional
 	public String getOriginalUrl(String shortUrlCode) {
-		Urls url = urlRepository.findByShortUrl(shortUrlCode)
+		Url url = urlRepository.findByShortUrl(shortUrlCode)
 				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
 
 		if (url.isDeleted())

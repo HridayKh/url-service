@@ -14,11 +14,11 @@ import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
-public class Users {
-	public Users() {
+public class User {
+	public User() {
 	}
 
-	public Users(String email, String profilePicture) {
+	public User(String email, String profilePicture) {
 		this.email = email;
 		this.profilePicture = profilePicture;
 	}

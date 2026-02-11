@@ -1,6 +1,5 @@
 package in.hridaykh.url_service.controllers;
 
-import java.nio.file.attribute.UserPrincipal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,9 +14,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import in.hridaykh.url_service.Service.OauthService;
 import in.hridaykh.url_service.Service.UrlService;
 import in.hridaykh.url_service.config.ViewRegistry;
-import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
+import in.hridaykh.url_service.dtos.AnonShortenUrlResponseDTO;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
-import in.hridaykh.url_service.model.tables.Users;
 
 @Controller
 public class IndexController {
@@ -53,7 +51,7 @@ public class IndexController {
 	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
 		String shortUrlCode = urlService.createAnonShortUrl(originalUrl).getShortUrl();
 
-		ShortenUrlResponseDTO result = new ShortenUrlResponseDTO(domain + "/" + shortUrlCode,
+		AnonShortenUrlResponseDTO result = new AnonShortenUrlResponseDTO(domain + "/" + shortUrlCode,
 				"https://" + domain + "/" + shortUrlCode);
 
 		model.addAttribute("result", result);

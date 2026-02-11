@@ -6,16 +6,17 @@ import java.util.Base64;
 
 import org.springframework.stereotype.Service;
 
-import in.hridaykh.url_service.Service.integration.Github;
+import in.hridaykh.url_service.Service.integration.GithubIntegration;
 import in.hridaykh.url_service.config.oauth.GithubProperties;
-import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
+import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
+import in.hridaykh.url_service.model.oauth.GithubUser;
 import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
-import in.hridaykh.url_service.model.tables.OauthProviders;
-import in.hridaykh.url_service.model.tables.UserSessions;
-import in.hridaykh.url_service.model.tables.Users;
+import in.hridaykh.url_service.model.tables.OauthProvider;
+import in.hridaykh.url_service.model.tables.UserSession;
+import in.hridaykh.url_service.model.tables.User;
 import in.hridaykh.url_service.repository.OauthProvidersRepository;
 import in.hridaykh.url_service.repository.UserRepository;
 import in.hridaykh.url_service.repository.UserSessionsRepository;
@@ -68,39 +69,41 @@ public class OauthService {
 		OauthUserDTO userDto = null;
 		switch (providerName) {
 			case GITHUB: {
-				String accessToken = Github.getAccessToken(code, githubProps);
+				String accessToken = GithubIntegration.getAccessToken(code, githubProps);
 				System.out.println("\n\nReceived Access Token: " + accessToken);
-				userDto = Github.getUser(accessToken);
-				System.out.println("\n\nFetched User Info: " + userDto);
+				GithubUser githubUserDto = GithubIntegration.getUser(accessToken);
+				userDto = new OauthUserDTO(githubUserDto.id(), githubUserDto.email(),
+						githubUserDto.avatarUrl());
+				System.out.println("\n\nFetched User Info: " + githubUserDto);
 				break;
 			}
 		}
 		if (userDto == null)
 			throw new RuntimeException("Failed to fetch user info from provider");
 
-		Users user = userRepository.findByEmail(userDto.email());
+		User user = userRepository.findByEmail(userDto.email());
 		if (user == null) {
-			user = new Users(userDto.email(), userDto.avatarUrl());
+			user = new User(userDto.email(), userDto.profilePIcUrl());
 			userRepository.save(user);
 		}
 
-		OauthProviders oauthProvider = oauthProvidersRepository.findByUser_IdAndProviderName(user.getId(),
+		OauthProvider oauthProvider = oauthProvidersRepository.findByUser_IdAndProviderName(user.getId(),
 				providerName);
 
 		if (oauthProvider == null) {
-			oauthProvider = new OauthProviders(user, providerName, userDto.id(), userDto.avatarUrl());
+			oauthProvider = new OauthProvider(user, providerName, userDto.id(), userDto.profilePIcUrl());
 			oauthProvidersRepository.save(oauthProvider);
 		}
 
 		String refreshToken = oauthUtils.createRefreshToken();
 
-		UserSessions session = new UserSessions(user, refreshToken);
+		UserSession session = new UserSession(user, refreshToken);
 		userSessionsRepository.save(session);
 
 		UserJwtPayload jwt = new UserJwtPayload(user.getId(), user.getProfilePicture(),
 				System.currentTimeMillis());
 		String rawJwtString = objectMapper.writeValueAsString(jwt);
-		
+
 		String encodedJwtString = encoder.encodeToString(rawJwtString.getBytes(StandardCharsets.UTF_8));
 		String jwtPayload = JWT_HEADER + "." + encodedJwtString;
 		String jwtSign = oauthUtils.signHmacSHA256(jwtPayload);

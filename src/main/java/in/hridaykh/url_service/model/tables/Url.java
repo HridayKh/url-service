@@ -26,7 +26,7 @@ import java.util.Map;
 @Table(name = "urls", indexes = {
 		@Index(name = "idx_short_url", columnList = "short_url", unique = true)
 })
-public class Urls {
+public class Url {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,7 +34,7 @@ public class Urls {
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "user_id")
-	private Users user;
+	private User user;
 
 	@Column(columnDefinition = "TEXT", nullable = false)
 	private String originalUrl;

@@ -6,14 +6,14 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import in.hridaykh.url_service.model.tables.Urls;
+import in.hridaykh.url_service.model.tables.Url;
 
 @Repository
-public interface ShortUrlRepository extends JpaRepository<Urls, Long> {
+public interface ShortUrlRepository extends JpaRepository<Url, Long> {
 
-	Optional<Urls> findByShortUrl(String shortUrl);
+	Optional<Url> findByShortUrl(String shortUrl);
 
-	List<Urls> findByUser_IdAndIsActiveTrue(Long userId);
+	List<Url> findByUser_IdAndIsActiveTrue(Long userId);
 
 	boolean existsByShortUrl(String shortUrl);
 }
