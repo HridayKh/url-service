@@ -2,6 +2,7 @@ package in.hridaykh.url_service.utils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -9,10 +10,12 @@ import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
 import in.hridaykh.url_service.config.oauth.Oauth;
-import in.hridaykh.url_service.exceptions.StateGenerationException;
+import in.hridaykh.url_service.exception.StateGenerationException;
+import in.hridaykh.url_service.model.oauth.TokenPair;
 
 @Component
 public class OauthUtils {
@@ -51,5 +54,29 @@ public class OauthUtils {
 		byte[] randomBytes = new byte[64];
 		secureRandom.nextBytes(randomBytes);
 		return base64Encoder.encodeToString(randomBytes);
+	}
+
+	public void validateState(String state, String stateCookie) {
+		if (stateCookie == null || state == null)
+			throw new StateGenerationException();
+
+		String[] cookieParts = stateCookie.split(":");
+		if (cookieParts.length != 3)
+			throw new StateGenerationException();
+
+		String cookiePayload = cookieParts[0] + ":" + cookieParts[1];
+		String cookieSignature = cookieParts[2];
+		String expectedSignature = signHmacSHA256(cookiePayload);
+		if (!MessageDigest.isEqual(
+				expectedSignature.getBytes(StandardCharsets.UTF_8),
+				cookieSignature.getBytes(StandardCharsets.UTF_8)))
+			throw new StateGenerationException();
+
+		if (!state.equals(cookiePayload))
+			throw new StateGenerationException();
+
+		long expiryTime = Long.parseLong(cookieParts[1]);
+		if (System.currentTimeMillis() > expiryTime)
+			throw new StateGenerationException();
 	}
 }

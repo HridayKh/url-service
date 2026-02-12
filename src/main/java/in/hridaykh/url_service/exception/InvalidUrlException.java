@@ -1,4 +1,4 @@
-package in.hridaykh.url_service.exceptions;
+package in.hridaykh.url_service.exception;
 
 public class InvalidUrlException extends IllegalArgumentException {
 

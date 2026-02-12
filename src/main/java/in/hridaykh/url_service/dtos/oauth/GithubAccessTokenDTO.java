@@ -1,7 +1,9 @@
 package in.hridaykh.url_service.dtos.oauth;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record GithubAccessTokenDTO(
-		String accessToken,
+		@JsonProperty("access_token") String accessToken,
 		String scope,
-		String tokenType) {
+		@JsonProperty("token_type") String tokenType) {
 }

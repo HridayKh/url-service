@@ -5,10 +5,10 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import in.hridaykh.url_service.config.ViewRegistry;
-import in.hridaykh.url_service.exceptions.ExpiredUrlException;
-import in.hridaykh.url_service.exceptions.InvalidUrlException;
-import in.hridaykh.url_service.exceptions.NotFoundUrlException;
-import in.hridaykh.url_service.exceptions.StateGenerationException;
+import in.hridaykh.url_service.exception.ExpiredUrlException;
+import in.hridaykh.url_service.exception.InvalidUrlException;
+import in.hridaykh.url_service.exception.NotFoundUrlException;
+import in.hridaykh.url_service.exception.StateGenerationException;
 
 @ControllerAdvice
 public class ExceptionFilter {

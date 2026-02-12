@@ -26,8 +26,8 @@ public class OauthProvider {
 	public OauthProvider(User user, OauthProviderNames providerName, long providerUserId, String providerPfp) {
 		this.user = user;
 		this.providerName = providerName;
-		this.provider_user_id = providerUserId;
-		this.provider_pfp = providerPfp;
+		this.providerUserId = providerUserId;
+		this.providerPfp = providerPfp;
 	}
 
 	@Id
@@ -43,10 +43,10 @@ public class OauthProvider {
 	private OauthProviderNames providerName;
 
 	@Column(nullable = false)
-	private long provider_user_id;
+	private long providerUserId;
 
 	@Column
-	private String provider_pfp;
+	private String providerPfp;
 
 	@CreationTimestamp
 	@Column(updatable = false, nullable = false)

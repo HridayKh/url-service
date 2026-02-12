@@ -1,8 +1,5 @@
 package in.hridaykh.url_service.controllers;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -11,29 +8,31 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import in.hridaykh.url_service.Service.OauthService;
-import in.hridaykh.url_service.Service.UrlService;
+import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.dtos.AnonShortenUrlResponseDTO;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
+import in.hridaykh.url_service.service.OauthService;
+import in.hridaykh.url_service.service.UrlService;
 
 @Controller
 public class IndexController {
-
-	public static List<String> domainsList = new ArrayList<>(List.of("urls.hridaykh.in"));
+	private final DomainsList domainsList;
 	private final UrlService urlService;
 	private final OauthService oauthService;
 
-	public IndexController(UrlService urlService, OauthService oauthService) {
+	public IndexController(DomainsList domainsList, UrlService urlService, OauthService oauthService) {
+		this.domainsList = domainsList;
 		this.urlService = urlService;
 		this.oauthService = oauthService;
 	}
 
 	@GetMapping("/")
-	public String index(@CookieValue(value = "jwt", required = false) String jwt, Model model) {
-		model.addAttribute("domainsList", domainsList);
+	public String index(@CookieValue(value = "jwt", required = false) String jwt,
+			@CookieValue(value = "refreshToken", required = false) String refreshToken, Model model) {
+		model.addAttribute("domainsList", domainsList.list().split(","));
 
-		if (jwt == null)
+		if (jwt == null || jwt.isBlank())
 			return ViewRegistry.mainHome;
 
 		UserJwtPayload user = oauthService.getUserFromJwt(jwt);

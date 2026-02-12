@@ -1,4 +1,4 @@
-package in.hridaykh.url_service.Service.integration;
+package in.hridaykh.url_service.service.integration;
 
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,13 @@ import in.hridaykh.url_service.model.oauth.GithubUser;
 @Service
 public class GithubIntegration {
 
-	private static final RestClient restClient = RestClient.create();
+	private final RestClient restClient;
 
-	public static String getAccessToken(String code, GithubProperties githubProperties) {
+	public GithubIntegration(RestClient restClient) {
+		this.restClient = restClient;
+	}
+
+	public String getAccessToken(String code, GithubProperties githubProperties) {
 		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
 		formData.add("redirect_uri", "https://urls.HridayKh.in/oauth/callback/GITHUB");
 		formData.add("client_id", githubProperties.clientId());
@@ -33,8 +37,7 @@ public class GithubIntegration {
 		return response.accessToken();
 	}
 
-	public static GithubUser getUser(String accessToken) {
-		System.out.println("\n\nFetching user info from GitHub API with access token: " + accessToken);
+	public GithubUser getUser(String accessToken) {
 		return restClient.get()
 				.uri("https://api.github.com/user")
 				.header("Authorization", "Bearer " + accessToken)

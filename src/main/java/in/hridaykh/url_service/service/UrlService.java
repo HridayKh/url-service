@@ -1,13 +1,14 @@
-package in.hridaykh.url_service.Service;
+package in.hridaykh.url_service.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Service;
 
-import in.hridaykh.url_service.exceptions.ExpiredUrlException;
-import in.hridaykh.url_service.exceptions.InvalidUrlException;
-import in.hridaykh.url_service.exceptions.NotFoundUrlException;
+import in.hridaykh.url_service.exception.ExpiredUrlException;
+import in.hridaykh.url_service.exception.InvalidUrlException;
+import in.hridaykh.url_service.exception.NotFoundUrlException;
+import in.hridaykh.url_service.exception.ShortCodeCollisionException;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.tables.Url;
@@ -19,6 +20,7 @@ import jakarta.transaction.Transactional;
 public class UrlService {
 
 	private final ShortUrlRepository urlRepository;
+	private static final int MAX_COLLISION_RETRIES = 3;
 
 	public UrlService(ShortUrlRepository urlRepository) {
 		this.urlRepository = urlRepository;
@@ -28,9 +30,11 @@ public class UrlService {
 	public Url createAnonShortUrl(String originalUrl) throws InvalidUrlException {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
+		String shortCode = generateUniqueShortCode();
+
 		Url url = new Url();
 		url.setOriginalUrl(originalUrl);
-		url.setShortUrl(UrlUtils.generateUniqueCode());
+		url.setShortUrl(shortCode);
 		url.setExpiryType(ExpiryType.INACTIVITY);
 
 		long ONE_YEAR_SECONDS = Duration.ofDays(365).getSeconds();
@@ -58,6 +62,15 @@ public class UrlService {
 		urlRepository.save(url);
 
 		return url.getOriginalUrl();
+	}
+
+	private String generateUniqueShortCode() {
+		for (int i = 0; i < MAX_COLLISION_RETRIES; i++) {
+			String code = UrlUtils.generateUniqueCode();
+			if (!urlRepository.existsByShortUrl(code))
+				return code;
+		}
+		throw new ShortCodeCollisionException(MAX_COLLISION_RETRIES);
 	}
 
 }

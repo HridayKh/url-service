@@ -122,10 +122,15 @@ public class Url {
 				return expiryTime != null && now.isAfter(expiryTime);
 			case USAGE:
 				return expiryMaxClicks != null && clickCount >= expiryMaxClicks;
-			case INACTIVITY:
-				return lastClickedAt != null && expiryInactivityDurationSeconds != null
+			case INACTIVITY: {
+				LocalDateTime lastClickedAt = this.lastClickedAt;
+				if (lastClickedAt == null)
+					lastClickedAt = createdAt;
+
+				return expiryInactivityDurationSeconds != null
 						&& lastClickedAt.plusSeconds(expiryInactivityDurationSeconds)
 								.isBefore(now);
+			}
 			default:
 				return false;
 		}

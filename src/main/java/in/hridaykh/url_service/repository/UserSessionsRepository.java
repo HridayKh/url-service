@@ -6,6 +6,6 @@ import org.springframework.stereotype.Repository;
 import in.hridaykh.url_service.model.tables.UserSession;
 
 @Repository
-public interface UserSessionsRepository extends JpaRepository<UserSession, Long> { 
-	
+public interface UserSessionsRepository extends JpaRepository<UserSession, Long> {
+	void deleteByUser_Id(Long userId);
 }
