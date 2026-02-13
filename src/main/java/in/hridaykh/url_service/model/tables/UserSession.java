@@ -20,6 +20,7 @@ public class UserSession {
 
 	public UserSession() {
 	}
+
 	public UserSession(User user, String refreshToken) {
 		this.user = user;
 		this.refreshToken = refreshToken;
@@ -39,5 +40,21 @@ public class UserSession {
 	@CreationTimestamp
 	@Column(updatable = false, nullable = false)
 	private LocalDateTime createdAt;
+
+	public User getUser() {
+		return user;
+	}
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+	public void setRefreshToken(String newRefreshToken) {
+		this.refreshToken = newRefreshToken;
+	}
+
+	public long getId() {
+		return id;
+	}
 
 }

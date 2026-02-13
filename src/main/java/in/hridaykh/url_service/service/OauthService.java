@@ -1,50 +1,34 @@
 package in.hridaykh.url_service.service;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
 
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.config.oauth.GithubProperties;
+import in.hridaykh.url_service.config.oauth.OauthConfig;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
-import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
-import in.hridaykh.url_service.model.oauth.GithubUser;
-import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
-import in.hridaykh.url_service.model.tables.OauthProvider;
-import in.hridaykh.url_service.model.tables.UserSession;
-import in.hridaykh.url_service.model.tables.User;
-import in.hridaykh.url_service.repository.OauthProvidersRepository;
-import in.hridaykh.url_service.repository.UserRepository;
-import in.hridaykh.url_service.repository.UserSessionsRepository;
-import in.hridaykh.url_service.service.integration.GithubIntegration;
+import in.hridaykh.url_service.repository.UserSessionRepository;
 import in.hridaykh.url_service.utils.OauthUtils;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
-import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class OauthService {
 	private final GithubProperties githubProps;
 	private final OauthUtils oauthUtils;
-	private final UserRepository userRepository;
-	private final OauthProvidersRepository oauthProvidersRepository;
-	private final UserSessionsRepository userSessionsRepository;
-	private final ObjectMapper objectMapper;
-	private final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
+	private final UserSessionRepository userSessionsRepository;
+	private final OauthConfig oauthConfig;
 
-	private final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-
-	public OauthService(GithubProperties githubProps, OauthUtils oauthUtils, UserRepository userRepository,
-			OauthProvidersRepository oauthProvidersRepository,
-			UserSessionsRepository userSessionsRepository, ObjectMapper objectMapper) {
+	public OauthService(GithubProperties githubProps, OauthUtils oauthUtils,
+			UserSessionRepository userSessionsRepository, OauthConfig oauthConfig) {
 		this.githubProps = githubProps;
 		this.oauthUtils = oauthUtils;
-		this.userRepository = userRepository;
-		this.oauthProvidersRepository = oauthProvidersRepository;
 		this.userSessionsRepository = userSessionsRepository;
-		this.objectMapper = objectMapper;
+		this.oauthConfig = oauthConfig;
 	}
 
 	public InitiateFlowDTO initiateOauth(OauthProviderNames providerName) {
@@ -65,77 +49,16 @@ public class OauthService {
 	}
 
 	@Transactional
-	public TokenPair sessionJwtFromCallback(OauthProviderNames providerName, String code, String state,
-			String stateCookie) {
-		oauthUtils.validateState(state, stateCookie);
-		OauthUserDTO userDto = null;
-		switch (providerName) {
-			case GITHUB: {
-				String accessToken = GithubIntegration.getAccessToken(code, githubProps);
-				GithubUser githubUserDto = GithubIntegration.getUser(accessToken);
-				userDto = new OauthUserDTO(githubUserDto.id(), githubUserDto.email(),
-						githubUserDto.avatarUrl());
-				break;
-			}
-		}
-		if (userDto == null)
-			throw new RuntimeException("Failed to fetch user info from provider");
+	public void deleteSession(UserJwtPayload jwt, HttpServletResponse response) {
 
-		User user = userRepository.findByEmail(userDto.email());
-		if (user == null) {
-			user = new User(userDto.email(), userDto.profilePicUrl());
-			userRepository.save(user);
-		}
+		ResponseCookie jwtCookie = ResponseCookie
+				.from(oauthConfig.jwtCookieName(), "").path("/").maxAge(0).build();
 
-		OauthProvider oauthProvider = oauthProvidersRepository.findByUser_IdAndProviderName(user.getId(),
-				providerName);
-
-		if (oauthProvider == null) {
-			oauthProvider = new OauthProvider(user, providerName, userDto.id(), userDto.profilePicUrl());
-			oauthProvidersRepository.save(oauthProvider);
-		}
-
-		String refreshToken = oauthUtils.createRefreshToken();
-
-		UserSession session = new UserSession(user, refreshToken);
-		userSessionsRepository.save(session);
-
-		UserJwtPayload jwt = new UserJwtPayload(user.getId(), user.getProfilePicture(),
-				System.currentTimeMillis());
-		String rawJwtString = objectMapper.writeValueAsString(jwt);
-
-		String encodedJwtString = encoder.encodeToString(rawJwtString.getBytes(StandardCharsets.UTF_8));
-		String jwtPayload = JWT_HEADER + "." + encodedJwtString;
-		String jwtSign = oauthUtils.signHmacSHA256(jwtPayload);
-
-		return new TokenPair(jwtPayload + "." + jwtSign, refreshToken, user);
-	}
-
-	public UserJwtPayload getUserFromJwt(String jwt) {
-		String[] parts = jwt.split("\\.");
-		if (parts.length != 3)
-			return null;
-
-		String header = parts[0];
-		String payload = parts[1];
-		String signature = parts[2];
-
-		String signedData = header + "." + payload;
-		String expectedSignature = oauthUtils.signHmacSHA256(signedData);
-
-		if (!expectedSignature.equals(signature))
-			return null;
-
-		String rawPayload = new String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8);
-		UserJwtPayload userPayload = objectMapper.readValue(rawPayload, UserJwtPayload.class);
-		
-		return userPayload;
-	}
-
-	public void deleteSession(String jwt) {
-		UserJwtPayload payload = getUserFromJwt(jwt);
-		if (payload != null) 
-			userSessionsRepository.deleteByUser_Id(payload.userId());
+		ResponseCookie refreshTokenCookie = ResponseCookie
+				.from(oauthConfig.refreshTokenCookieName(), "").maxAge(0).path("/").build();
+		response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+		response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
+		userSessionsRepository.deleteById(jwt.jti());
 	}
 
 }

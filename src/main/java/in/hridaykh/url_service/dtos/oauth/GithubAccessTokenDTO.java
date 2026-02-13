@@ -1,5 +1,7 @@
 package in.hridaykh.url_service.dtos.oauth;
 
+import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public record GithubAccessTokenDTO(

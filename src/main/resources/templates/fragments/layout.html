@@ -30,6 +30,16 @@
 
 	<script defer src="/js/htmx-2.0.8.js"></script>
 	<script defer src="/js/hyperscript-0.9.12.js"></script>
+	<script type="text/javascript">
+		document.body.addEventListener('htmx:configRequest', (evt) => {
+			// Read the XSRF-TOKEN cookie
+			const csrfToken = document.cookie.replace(/(?:(?:^|.*;\s*)XSRF-TOKEN\s*\=\s*([^;]*).*$)|^.*$/, "$1");
+			// Put it in the header
+			if (csrfToken) {
+				evt.detail.headers['X-XSRF-TOKEN'] = csrfToken;
+			}
+		});
+	</script>
 </body>
 
 </html>

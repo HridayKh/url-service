@@ -9,12 +9,16 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import in.hridaykh.url_service.config.ViewRegistry;
+import in.hridaykh.url_service.config.oauth.OauthConfig;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.TokenPair;
+import in.hridaykh.url_service.model.oauth.UserJwtPayload;
+import in.hridaykh.url_service.service.JwtService;
 import in.hridaykh.url_service.service.OauthService;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -22,12 +26,13 @@ import jakarta.servlet.http.HttpServletResponse;
 public class OauthController {
 
 	private final OauthService oauthService;
-	private final String OAUTH_STATE_COOKIE_NAME = "oauth_state";
-	private final String OAUTH_JWT_COOKIE_NAME = "jwt";
-	private final String OAUTH_REFRESH_TOKEN_COOKIE_NAME = "refreshToken";
+	private final OauthConfig oauthConfig;
+	private final JwtService jwtService;
 
-	public OauthController(OauthService oauthService) {
+	public OauthController(OauthService oauthService, OauthConfig oauthConfig, JwtService jwtService) {
 		this.oauthService = oauthService;
+		this.oauthConfig = oauthConfig;
+		this.jwtService = jwtService;
 	}
 
 	@GetMapping("/oauth")
@@ -41,7 +46,7 @@ public class OauthController {
 		InitiateFlowDTO initiateFlowDto = oauthService.initiateOauth(providerName);
 
 		ResponseCookie stateCookie = ResponseCookie
-				.from(OAUTH_STATE_COOKIE_NAME, initiateFlowDto.statePayloadSigned())
+				.from(oauthConfig.stateCookieName(), initiateFlowDto.statePayloadSigned())
 				.httpOnly(true)
 				.secure(true)
 				.path("/oauth/callback/")
@@ -58,28 +63,26 @@ public class OauthController {
 			@CookieValue(value = "oauth_state", required = false) String stateCookie,
 			@RequestParam String state, HttpServletResponse response) {
 
-		TokenPair tokenPair = oauthService.sessionJwtFromCallback(providerName, code, state, stateCookie);
+		TokenPair tokenPair = jwtService.sessionJwtFromCallback(providerName, code, state, stateCookie);
 
-		ResponseCookie deleteCookie = ResponseCookie.from(OAUTH_STATE_COOKIE_NAME, "").maxAge(0)
+		ResponseCookie deleteCookie = ResponseCookie.from(oauthConfig.stateCookieName(), "").maxAge(0)
 				.path("/oauth/callback/").build();
 
 		ResponseCookie jwtCookie = ResponseCookie
-				.from(OAUTH_JWT_COOKIE_NAME, tokenPair.jwt())
+				.from(oauthConfig.jwtCookieName(), tokenPair.jwt())
 				.httpOnly(true)
 				.secure(true)
 				.path("/")
-				// .maxAge(Duration.ofMinutes(15).toSeconds()) // TODO USE FILTER TO HANDLE
-				// REFRESH TOKEN
-				.maxAge(Duration.ofDays(14).toSeconds())
+				.maxAge(Duration.ofMinutes(15).toSeconds())
 				.sameSite("Strict")
 				.build();
 
 		ResponseCookie refreshTokenCookie = ResponseCookie
-				.from(OAUTH_REFRESH_TOKEN_COOKIE_NAME, tokenPair.refreshToken())
+				.from(oauthConfig.refreshTokenCookieName(), tokenPair.refreshToken())
 				.httpOnly(true)
 				.secure(true)
 				.path("/")
-				.maxAge(Duration.ofDays(14).toSeconds())
+				.maxAge(Duration.ofDays(30).toSeconds())
 				.sameSite("Strict")
 				.build();
 
@@ -91,16 +94,8 @@ public class OauthController {
 	}
 
 	@GetMapping("/oauth/logout")
-	public String oauthLogout(@CookieValue(value = "jwt", required = false) String jwt, HttpServletResponse response) {
-		ResponseCookie jwtCookie = ResponseCookie
-				.from(OAUTH_JWT_COOKIE_NAME, "").path("/").maxAge(0).build();
-
-		ResponseCookie refreshTokenCookie = ResponseCookie
-				.from(OAUTH_REFRESH_TOKEN_COOKIE_NAME, "").maxAge(0).path("/").build();
-
-		response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
-		oauthService.deleteSession(jwt);
+	public String oauthLogout(@RequestAttribute UserJwtPayload jwt, HttpServletResponse response) {
+		oauthService.deleteSession(jwt, response);
 		return "redirect:/";
 	}
 

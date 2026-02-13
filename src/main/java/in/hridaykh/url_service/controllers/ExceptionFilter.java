@@ -8,6 +8,7 @@ import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.exception.ExpiredUrlException;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
+import in.hridaykh.url_service.exception.SessionExpiredException;
 import in.hridaykh.url_service.exception.StateGenerationException;
 
 @ControllerAdvice
@@ -33,6 +34,13 @@ public class ExceptionFilter {
 
 	@ExceptionHandler(StateGenerationException.class)
 	public String handleStateGenerationException(StateGenerationException ex, Model model) {
+		model.addAttribute("errorMessage", ex.getMessage());
+		ex.printStackTrace();
+		return ViewRegistry.error;
+	}
+
+	@ExceptionHandler(SessionExpiredException.class)
+	public String handleSessionExpiredException(SessionExpiredException ex, Model model) {
 		model.addAttribute("errorMessage", ex.getMessage());
 		return ViewRegistry.error;
 	}

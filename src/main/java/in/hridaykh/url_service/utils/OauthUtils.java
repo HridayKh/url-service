@@ -10,21 +10,19 @@ import java.util.Base64;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 
-import in.hridaykh.url_service.config.oauth.Oauth;
+import in.hridaykh.url_service.config.oauth.OauthConfig;
 import in.hridaykh.url_service.exception.StateGenerationException;
-import in.hridaykh.url_service.model.oauth.TokenPair;
 
 @Component
 public class OauthUtils {
 	private final SecureRandom secureRandom = new SecureRandom();
 	private final Base64.Encoder base64Encoder = Base64.getUrlEncoder().withoutPadding();
 
-	private final Oauth oauthProps;
+	private final OauthConfig oauthProps;
 
-	public OauthUtils(Oauth oauthProps) {
+	public OauthUtils(OauthConfig oauthProps) {
 		this.oauthProps = oauthProps;
 	}
 
@@ -72,7 +70,9 @@ public class OauthUtils {
 				cookieSignature.getBytes(StandardCharsets.UTF_8)))
 			throw new StateGenerationException();
 
-		if (!state.equals(cookiePayload))
+		if (!MessageDigest.isEqual(
+				state.getBytes(StandardCharsets.UTF_8),
+				cookiePayload.getBytes(StandardCharsets.UTF_8)))
 			throw new StateGenerationException();
 
 		long expiryTime = Long.parseLong(cookieParts[1]);
