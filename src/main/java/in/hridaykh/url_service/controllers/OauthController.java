@@ -51,7 +51,7 @@ public class OauthController {
 				.secure(true)
 				.path("/oauth/callback/")
 				.maxAge(Duration.ofMinutes(15).toSeconds())
-				.sameSite("Strict")
+				.sameSite("Lax")
 				.build();
 
 		response.addHeader(HttpHeaders.SET_COOKIE, stateCookie.toString());
@@ -63,33 +63,16 @@ public class OauthController {
 			@CookieValue(value = "oauth_state", required = false) String stateCookie,
 			@RequestParam String state, HttpServletResponse response) {
 
-		System.out.println("[CONTROLLER] Received callback with state: " + state + " and state cookie: " + stateCookie);
+		System.out.println("[CONTROLLER] Received callback with state: " + state + " and state cookie: "
+				+ stateCookie);
 		TokenPair tokenPair = jwtService.sessionJwtFromCallback(providerName, code, state, stateCookie);
 
 		ResponseCookie deleteCookie = ResponseCookie.from(oauthConfig.stateCookieName(), "").maxAge(0)
 				.path("/oauth/callback/").build();
 
-		ResponseCookie jwtCookie = ResponseCookie
-				.from(oauthConfig.jwtCookieName(), tokenPair.jwt())
-				.httpOnly(true)
-				.secure(true)
-				.path("/")
-				.maxAge(Duration.ofMinutes(15).toSeconds())
-				.sameSite("Strict")
-				.build();
-
-		ResponseCookie refreshTokenCookie = ResponseCookie
-				.from(oauthConfig.refreshTokenCookieName(), tokenPair.refreshToken())
-				.httpOnly(true)
-				.secure(true)
-				.path("/")
-				.maxAge(Duration.ofDays(30).toSeconds())
-				.sameSite("Strict")
-				.build();
+		jwtService.setCookies(response, tokenPair);
 
 		response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, jwtCookie.toString());
-		response.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString());
 
 		return "redirect:/";
 	}

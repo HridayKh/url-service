@@ -1,0 +1,34 @@
+Security doesn’t usually fail in the obvious places.
+It fails in the 𝘦𝘥𝘨𝘦𝘴.
+
+Today wasn’t about adding features to my URL service.
+It was about tightening the trust boundary until it stops leaking.
+
+What changed:
+
+• OAuth state cookie is now explicitly verified — no silent assumptions in the callback flow
+• JWT header is fixed and validated — algorithm is no longer “whatever shows up”
+• Issuer validation added — tokens must come from where they claim
+• Constant-time comparisons for signatures — no timing side channels
+• Logout now deletes server-side records immediately, not “eventually”
+• Centralized cookie naming — no magic strings drifting across the codebase
+• Authentication filter cleaned up so request handling has one clear entry point
+
+None of this changes the UI.
+
+But internally, the system is stricter:
+
+Tokens are verified against intent.
+Trust has boundaries.
+Logout actually means logout.
+Security checks are explicit, not implied.
+
+Most vulnerabilities don’t come from missing encryption.
+They come from small, convenient shortcuts that accumulate.
+
+This week was about removing those shortcuts.
+
+Still building a URL service.
+But really, I’m building something that can be trusted under pressure.
+
+What’s one “small” security detail you’ve seen turn into a big problem later?

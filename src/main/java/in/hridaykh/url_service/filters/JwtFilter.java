@@ -5,14 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Base64;
-
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
-import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import in.hridaykh.url_service.config.oauth.JwtAuthPaths;
@@ -23,6 +18,7 @@ import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.User;
 import in.hridaykh.url_service.model.tables.UserSession;
 import in.hridaykh.url_service.repository.UserSessionRepository;
+import in.hridaykh.url_service.service.JwtService;
 import in.hridaykh.url_service.utils.OauthUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -34,159 +30,145 @@ import tools.jackson.databind.ObjectMapper;
 @Component
 @Order(2)
 public class JwtFilter extends OncePerRequestFilter {
+	private static final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+	private static final String JWT_ISSUER = "https://urls.hridaykh.in/oauth/callback";
+	private static final String JWT_AUDIENCE = "urls.hridaykh.in";
+	private static final int JWT_VERSION = 1;
+	private static final int JWT_TOKEN_EXPIRATION_MINUTES = 15;
+	private static final int SESSION_VALIDITY_DAYS = 30;
+	private static final int CLOCK_SKEW_SECONDS = 30;
+	private static final String HOME_PATH = "/";
+	private static final String JWT_REQUEST_ATTRIBUTE = "jwt";
+
 	private final OauthConfig oauthConfig;
 	private final OauthUtils oauthUtils;
 	private final ObjectMapper objectMapper;
 	private final UserSessionRepository userSessionsRepository;
 	private final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-	private final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
-	private final AntPathMatcher pathMatcher = new AntPathMatcher();
+	private final JwtService jwtService;
 
 	public JwtFilter(OauthConfig oauthConfig, OauthUtils oauthUtils, ObjectMapper objectMapper,
-			UserSessionRepository userSessionsRepository) {
+			UserSessionRepository userSessionsRepository, JwtService jwtService) {
 		this.oauthConfig = oauthConfig;
 		this.oauthUtils = oauthUtils;
 		this.objectMapper = objectMapper;
 		this.userSessionsRepository = userSessionsRepository;
+		this.jwtService = jwtService;
 	}
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
-		boolean shouldFIlter = Arrays.stream(JwtAuthPaths.AUTH_PATHS)
-				.anyMatch(pattern -> pathMatcher.match(pattern, request.getServletPath()));
-		System.out.println("\n\n\tJWT FILTER\nRequest Path: " + request.getServletPath() + ", shouldFilter: "
-				+ shouldFIlter);
-		return !shouldFIlter;
+		String path = request.getServletPath();
+		boolean shouldFilter = JwtAuthPaths.AUTH_PATHS.contains(path);
+		System.out.println("JWT Filter check - Path: " + path + ", Should filter: " + shouldFilter);
+		return !shouldFilter;
 	}
 
 	@Override
 	protected void doFilterInternal(HttpServletRequest req,
 			HttpServletResponse resp, FilterChain filterChain)
 			throws IOException, ServletException {
-		req.setAttribute("jwt", null);
+
+		req.setAttribute(JWT_REQUEST_ATTRIBUTE, null);
 
 		String path = req.getServletPath();
-		boolean isOptionalPath = path.equals("/");
-		System.out.println("Request Path: " + path + ", isOptionalPath: " + isOptionalPath);
+		boolean isHomePath = HOME_PATH.equals(path);
 
-		Cookie[] cookies = req.getCookies();
-		if (cookies == null) {
-
-			System.out.println("No cookies found in the request");
-
-			if (isOptionalPath) {
-				filterChain.doFilter(req, resp);
+		try {
+			UserJwtPayload jwt = extractAndValidateJwt(req, resp, isHomePath);
+			if (jwt != null)
+				req.setAttribute(JWT_REQUEST_ATTRIBUTE, jwt);
+		} catch (Exception e) {
+			System.out.println("JWT processing failed: " + e.getMessage());
+			clearCookies(resp);
+			if (!isHomePath) {
+				resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Session, Please Login!");
 				return;
 			}
-			resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No Authentication Token Found");
-			return;
+		}
+
+		filterChain.doFilter(req, resp);
+	}
+
+	private UserJwtPayload extractAndValidateJwt(HttpServletRequest req, HttpServletResponse resp,
+			boolean isHomePath) throws IOException {
+		Cookie[] cookiesArr = req.getCookies();
+		if (cookiesArr == null) {
+			System.out.println("No cookies found in request");
+			clearCookies(resp);
+			return null;
 		}
 
 		Cookie jwtCookie = null;
 		Cookie refreshTokenCookie = null;
-		for (Cookie cookie : cookies) {
+
+		for (Cookie cookie : cookiesArr) {
 			if (oauthConfig.jwtCookieName().equals(cookie.getName()))
 				jwtCookie = cookie;
-
 			if (oauthConfig.refreshTokenCookieName().equals(cookie.getName()))
 				refreshTokenCookie = cookie;
 		}
 
 		if (jwtCookie == null || refreshTokenCookie == null || jwtCookie.getValue().isBlank()
 				|| refreshTokenCookie.getValue().isBlank()) {
-
-			System.out.println("Jwt and refresh token not found in cookies. jwtCookie: |"
-					+ (jwtCookie != null ? jwtCookie.getValue() : "null")
-					+ "|, refreshTokenCookie: |"
-					+ (refreshTokenCookie != null ? refreshTokenCookie.getValue() : "null") + "|");
-
+			System.out.println("JWT or refresh token cookie is missing or blank");
 			clearCookies(resp);
-			if (isOptionalPath) {
-				filterChain.doFilter(req, resp);
-				return;
-			}
-			resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "No Authentication Token Found");
-			return;
+			return null;
 		}
-
-		long nowInSeconds = System.currentTimeMillis() / 1000;
-		String refreshToken = refreshTokenCookie.getValue();
-
-		System.out.println("Coookies found, processing them now");
 
 		UserJwtPayload jwt = decodeJwt(jwtCookie.getValue());
 
-		if (!"https://urls.hridaykh.in/oauth/callback".equals(jwt.iss()) || jwt.sub() <= 0
-				|| !"urls.hridaykh.in".equals(jwt.aud()) || jwt.iat() > nowInSeconds
-				|| jwt.jti() == 0 || jwt.ver() != 1) {
-
-			System.out.println("Jwt payload is invalid");
-
+		if (!isValidJwtPayload(jwt)) {
+			System.out.println("JWT payload is invalid");
 			clearCookies(resp);
-			if (isOptionalPath) {
-				filterChain.doFilter(req, resp);
-				return;
-			}
-			resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid Authentication Token");
-			return;
+			return null;
 		}
 
-		if (jwt.nbf() > nowInSeconds + 30) { // Allow 30 seconds of clock skew for nbf
+		long nowInSeconds = System.currentTimeMillis() / 1000;
 
-			System.out.println("Jwt not yet valid, nbf: " + jwt.nbf() + ", now: " + nowInSeconds);
-
-			if (isOptionalPath) {
-				filterChain.doFilter(req, resp);
-				return;
-			}
-			resp.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Token Not Yet Valid");
-			return;
+		if (jwt.nbf() > nowInSeconds + CLOCK_SKEW_SECONDS) {
+			System.out.println("JWT not yet valid. NBF: " + jwt.nbf() + " Now: " + nowInSeconds);
+			return null;
 		}
 
 		if (jwt.exp() < nowInSeconds) {
-
-			System.out.println("Jwt expired, attempting refresh");
-
-			TokenPair tokenPair = handleRefresh(refreshToken);
-			ResponseCookie jwtCookieResp = ResponseCookie
-					.from(oauthConfig.jwtCookieName(), tokenPair.jwt())
-					.httpOnly(true)
-					.secure(true)
-					.path("/")
-					.maxAge(Duration.ofMinutes(15).toSeconds())
-					.sameSite("Strict")
-					.build();
-
-			ResponseCookie refreshTokenCookieResp = ResponseCookie
-					.from(oauthConfig.refreshTokenCookieName(), tokenPair.refreshToken())
-					.httpOnly(true)
-					.secure(true)
-					.path("/")
-					.maxAge(Duration.ofDays(30).toSeconds())
-					.sameSite("Strict")
-					.build();
-
-			resp.addHeader(HttpHeaders.SET_COOKIE, jwtCookieResp.toString());
-			resp.addHeader(HttpHeaders.SET_COOKIE, refreshTokenCookieResp.toString());
+			System.out.println("JWT expired, attempting refresh");
+			TokenPair tokenPair = handleRefresh(refreshTokenCookie.getValue());
+			jwtService.setCookies(resp, tokenPair);
 			jwt = decodeJwt(tokenPair.jwt());
 		}
 
-		System.out.println("jwt processing done");
+		System.out.println("JWT successfully validated and processed");
+		return jwt;
+	}
 
-		req.setAttribute("jwt", jwt);
+	private boolean isValidJwtPayload(UserJwtPayload jwt) {
+		if (jwt == null)
+			return false;
+		long nowInSeconds = System.currentTimeMillis() / 1000;
 
-		System.out.println("forwarding request");
+		boolean validIssuer = JWT_ISSUER.equals(jwt.iss());
+		boolean validSubject = jwt.sub() > 0;
+		boolean validAudience = JWT_AUDIENCE.equals(jwt.aud());
+		boolean validIat = jwt.iat() <= nowInSeconds;
+		boolean validJti = jwt.jti() > 0;
+		boolean validVersion = jwt.ver() == JWT_VERSION;
 
-		filterChain.doFilter(req, resp);
+		return validIssuer && validSubject && validAudience && validIat && validJti && validVersion;
 	}
 
 	public TokenPair handleRefresh(String oldRefreshToken) {
 		UserSession session = userSessionsRepository.findByRefreshToken(oldRefreshToken);
-		if (session == null)
+		if (session == null) {
+			System.out.println("No session found for refresh token");
 			throw new SessionExpiredException();
+		}
 
-		if (session.getCreatedAt().isBefore(LocalDateTime.now().minus(Duration.ofDays(30))))
+		if (session.getCreatedAt()
+				.isBefore(LocalDateTime.now().minus(Duration.ofDays(SESSION_VALIDITY_DAYS)))) {
+			System.out.println("Session expired, created at: " + session.getCreatedAt());
 			throw new SessionExpiredException();
+		}
 
 		String newRefreshToken = oauthUtils.createRefreshToken();
 		session.setRefreshToken(newRefreshToken);
@@ -200,48 +182,47 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	private String generateJwt(User user, long sessionId) {
 		long nowInSeconds = System.currentTimeMillis() / 1000;
-		long expInSeconds = nowInSeconds + Duration.ofMinutes(15).toSeconds();
+		long expInSeconds = nowInSeconds + Duration.ofMinutes(JWT_TOKEN_EXPIRATION_MINUTES).toSeconds();
 
 		UserJwtPayload jwt = new UserJwtPayload(
-				"https://urls.hridaykh.in/oauth/callback", // iss
-				user.getId(), // sub
-				"urls.hridaykh.in", // aud
-				expInSeconds, // exp
-				nowInSeconds, // nbf, give 5 seconds of clock skew
-				nowInSeconds, // iat
-				sessionId, // jti is session id
-				1, // ver
-				user.getEmail(), // email
-				user.getProfilePicture() // pfp
-		);
+				JWT_ISSUER,
+				user.getId(),
+				JWT_AUDIENCE,
+				expInSeconds,
+				nowInSeconds,
+				nowInSeconds,
+				sessionId,
+				JWT_VERSION,
+				user.getEmail(),
+				user.getProfilePicture());
 
 		String rawJwtString = objectMapper.writeValueAsString(jwt);
-
 		String encodedJwtString = encoder.encodeToString(rawJwtString.getBytes(StandardCharsets.UTF_8));
 		String jwtPayload = JWT_HEADER + "." + encodedJwtString;
 		String jwtSign = oauthUtils.signHmacSHA256(jwtPayload);
+
 		return jwtPayload + "." + jwtSign;
 	}
 
 	private void clearCookies(HttpServletResponse resp) {
-		resp.addCookie(new Cookie(oauthConfig.jwtCookieName(), "") {
-			{
-				setMaxAge(0);
-				setPath("/");
-			}
-		});
-		resp.addCookie(new Cookie(oauthConfig.refreshTokenCookieName(), "") {
-			{
-				setMaxAge(0);
-				setPath("/");
-			}
-		});
+		Cookie jwtCookie = new Cookie(oauthConfig.jwtCookieName(), "");
+		jwtCookie.setMaxAge(0);
+		jwtCookie.setPath("/");
+
+		Cookie refreshTokenCookie = new Cookie(oauthConfig.refreshTokenCookieName(), "");
+		refreshTokenCookie.setMaxAge(0);
+		refreshTokenCookie.setPath("/");
+
+		resp.addCookie(jwtCookie);
+		resp.addCookie(refreshTokenCookie);
 	}
 
 	public UserJwtPayload decodeJwt(String jwt) {
 		String[] parts = jwt.split("\\.");
-		if (parts.length != 3)
+		if (parts.length != 3) {
+			System.out.println("Invalid JWT format: expected 3 parts, got " + parts.length);
 			return null;
+		}
 
 		String header = parts[0];
 		String payload = parts[1];
@@ -251,13 +232,18 @@ public class JwtFilter extends OncePerRequestFilter {
 		String expectedSignature = oauthUtils.signHmacSHA256(signedData);
 
 		if (!MessageDigest.isEqual(expectedSignature.getBytes(StandardCharsets.UTF_8),
-				signature.getBytes(StandardCharsets.UTF_8)))
+				signature.getBytes(StandardCharsets.UTF_8))) {
+			System.out.println("JWT signature verification failed");
 			return null;
+		}
 
-		String rawPayload = new String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8);
-		UserJwtPayload userPayload = objectMapper.readValue(rawPayload, UserJwtPayload.class);
-
-		return userPayload;
+		try {
+			String rawPayload = new String(Base64.getUrlDecoder().decode(payload), StandardCharsets.UTF_8);
+			return objectMapper.readValue(rawPayload, UserJwtPayload.class);
+		} catch (Exception e) {
+			System.out.println("Failed to decode JWT payload: " + e.getMessage());
+			return null;
+		}
 	}
 
 }
