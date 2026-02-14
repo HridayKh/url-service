@@ -63,6 +63,7 @@ public class OauthController {
 			@CookieValue(value = "oauth_state", required = false) String stateCookie,
 			@RequestParam String state, HttpServletResponse response) {
 
+		System.out.println("[CONTROLLER] Received callback with state: " + state + " and state cookie: " + stateCookie);
 		TokenPair tokenPair = jwtService.sessionJwtFromCallback(providerName, code, state, stateCookie);
 
 		ResponseCookie deleteCookie = ResponseCookie.from(oauthConfig.stateCookieName(), "").maxAge(0)

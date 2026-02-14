@@ -52,8 +52,11 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
-		return !Arrays.stream(JwtAuthPaths.AUTH_PATHS)
+		boolean shouldFIlter = Arrays.stream(JwtAuthPaths.AUTH_PATHS)
 				.anyMatch(pattern -> pathMatcher.match(pattern, request.getServletPath()));
+		System.out.println("\n\n\tJWT FILTER\nRequest Path: " + request.getServletPath() + ", shouldFilter: "
+				+ shouldFIlter);
+		return !shouldFIlter;
 	}
 
 	@Override
@@ -68,6 +71,9 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		Cookie[] cookies = req.getCookies();
 		if (cookies == null) {
+
+			System.out.println("No cookies found in the request");
+
 			if (isOptionalPath) {
 				filterChain.doFilter(req, resp);
 				return;
@@ -88,6 +94,12 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		if (jwtCookie == null || refreshTokenCookie == null || jwtCookie.getValue().isBlank()
 				|| refreshTokenCookie.getValue().isBlank()) {
+
+			System.out.println("Jwt and refresh token not found in cookies. jwtCookie: |"
+					+ (jwtCookie != null ? jwtCookie.getValue() : "null")
+					+ "|, refreshTokenCookie: |"
+					+ (refreshTokenCookie != null ? refreshTokenCookie.getValue() : "null") + "|");
+
 			clearCookies(resp);
 			if (isOptionalPath) {
 				filterChain.doFilter(req, resp);
@@ -100,11 +112,16 @@ public class JwtFilter extends OncePerRequestFilter {
 		long nowInSeconds = System.currentTimeMillis() / 1000;
 		String refreshToken = refreshTokenCookie.getValue();
 
+		System.out.println("Coookies found, processing them now");
+
 		UserJwtPayload jwt = decodeJwt(jwtCookie.getValue());
 
 		if (!"https://urls.hridaykh.in/oauth/callback".equals(jwt.iss()) || jwt.sub() <= 0
 				|| !"urls.hridaykh.in".equals(jwt.aud()) || jwt.iat() > nowInSeconds
 				|| jwt.jti() == 0 || jwt.ver() != 1) {
+
+			System.out.println("Jwt payload is invalid");
+
 			clearCookies(resp);
 			if (isOptionalPath) {
 				filterChain.doFilter(req, resp);
@@ -114,7 +131,10 @@ public class JwtFilter extends OncePerRequestFilter {
 			return;
 		}
 
-		if (jwt.nbf() > nowInSeconds - 30) { // Allow 30 seconds of clock skew for nbf
+		if (jwt.nbf() > nowInSeconds + 30) { // Allow 30 seconds of clock skew for nbf
+
+			System.out.println("Jwt not yet valid, nbf: " + jwt.nbf() + ", now: " + nowInSeconds);
+
 			if (isOptionalPath) {
 				filterChain.doFilter(req, resp);
 				return;
@@ -124,6 +144,9 @@ public class JwtFilter extends OncePerRequestFilter {
 		}
 
 		if (jwt.exp() < nowInSeconds) {
+
+			System.out.println("Jwt expired, attempting refresh");
+
 			TokenPair tokenPair = handleRefresh(refreshToken);
 			ResponseCookie jwtCookieResp = ResponseCookie
 					.from(oauthConfig.jwtCookieName(), tokenPair.jwt())
@@ -148,7 +171,11 @@ public class JwtFilter extends OncePerRequestFilter {
 			jwt = decodeJwt(tokenPair.jwt());
 		}
 
+		System.out.println("jwt processing done");
+
 		req.setAttribute("jwt", jwt);
+
+		System.out.println("forwarding request");
 
 		filterChain.doFilter(req, resp);
 	}
@@ -180,7 +207,7 @@ public class JwtFilter extends OncePerRequestFilter {
 				user.getId(), // sub
 				"urls.hridaykh.in", // aud
 				expInSeconds, // exp
-				nowInSeconds, // nbf
+				nowInSeconds, // nbf, give 5 seconds of clock skew
 				nowInSeconds, // iat
 				sessionId, // jti is session id
 				1, // ver

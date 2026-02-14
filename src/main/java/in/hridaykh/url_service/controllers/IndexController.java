@@ -28,8 +28,16 @@ public class IndexController {
 	public String index(Model model, @RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 
-		if (jwt == null)
+		System.out.println("\n\n\tINDEX CONTROLLER\nChecking jwt in index controller");
+
+		if (jwt == null) {
+
+			System.out.println("JWT NULL!!!");
+
 			return ViewRegistry.mainHome;
+		}
+
+		System.out.println("JWT FOUND!!!");
 
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());

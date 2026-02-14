@@ -52,6 +52,7 @@ public class JwtService {
 	@Transactional
 	public TokenPair sessionJwtFromCallback(OauthProviderNames providerName, String code, String state,
 			String stateCookie) {
+		System.out.println("[JWT SERVICE] Received callback with state: " + state + " and state cookie: " + stateCookie);
 		oauthUtils.validateState(state, stateCookie);
 		OauthUserDTO userDto = null;
 		switch (providerName) {
@@ -93,7 +94,7 @@ public class JwtService {
 				user.getId(), // sub
 				"urls.hridaykh.in", // aud
 				expInSeconds, // exp
-				nowInSeconds, // nbf
+				nowInSeconds - 5, // nbf, give 5 seconds of clock skew
 				nowInSeconds, // iat
 				session.getId(), // jti
 				1, // ver
