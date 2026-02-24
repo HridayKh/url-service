@@ -38,6 +38,16 @@
 				evt.detail.headers['X-XSRF-TOKEN'] = csrfToken;
 			}
 		});
+		document.body.addEventListener('htmx:beforeRequest', function (evt) {
+			if (evt.detail.elt.getAttribute('hx-post') === '/urls/new-anon') {
+				const result = document.getElementById('shorten-url-result'); if (result) result.setAttribute('aria-busy', 'true');
+			}
+		});
+
+		document.body.addEventListener('htmx:afterRequest', function (evt) {
+			const result = document.getElementById('shorten-url-result');
+			if (result) result.setAttribute('aria-busy', 'false');
+		});
 	</script>
 </body>
 
