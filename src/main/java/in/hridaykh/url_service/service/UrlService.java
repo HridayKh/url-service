@@ -30,6 +30,16 @@ public class UrlService {
 	public Url createAnonShortUrl(String originalUrl) throws InvalidUrlException {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
+
+		// a pregenerated url for quickly testing locally for frontend dev and intergraiton
+		if (originalUrl.startsWith("http://127.0.0.1:8080")) {
+			Url url = new Url();
+			url.setOriginalUrl(originalUrl);
+			url.setShortUrl("222vw");
+			url.setExpiryType(ExpiryType.INACTIVITY);
+			return url;
+		}
+
 		String shortCode = generateUniqueShortCode();
 
 		Url url = new Url();

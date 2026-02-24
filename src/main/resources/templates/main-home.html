@@ -7,14 +7,13 @@
 
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
-	<li _="on click 
-	add @open to #providerListModal
-	set innerText of #auth-type to 'Login'">
+	<li onclick="document.getElementById('providerListModal').setAttribute('open', ''); 
+             document.getElementById('auth-type').innerText = 'Login'">
 		<a href="#"> Login </a>
 	</li>
-	<li _="on click 
-	add @open to #providerListModal
-	set innerText of #auth-type to 'Register'">
+
+	<li onclick="document.getElementById('providerListModal').setAttribute('open', ''); 
+             document.getElementById('auth-type').innerText = 'Register'">
 		<a href="#"> Register </a>
 	</li>
 </th:block>
@@ -24,7 +23,7 @@
 	<section id="shorten-url-input">
 		<form role="group" hx-post="/urls/new-anon" hx-target="#shorten-url-result" hx-swap="outerHTML"
 			hx-indicator="#shorten-url-result"
-			_="on htmx:beforeRequest add [@aria-busy=true] to #shorten-url-result">
+			onhtmx:before-request="document.querySelector('#shorten-url-result').setAttribute('aria-busy', 'true')">
 
 			<input type="url" name="originalUrl" placeholder="Enter Link" required />
 			<select name="domain" required>
@@ -43,12 +42,12 @@
 	</section>
 
 	<section id="auth-modal">
-		<dialog id="providerListModal" _="on mutation of @open if @open trigger loadProviders end"
-			hx-get="/oauth" hx-trigger="loadProviders" hx-target="#providerList" data-auth-type="login">
+		<dialog id="providerListModal" hx-get="/oauth" hx-trigger="intersect once" hx-target="#providerList">
 			<article>
 				<header>
 					<button aria-label="Close" rel="prev"
-						_="on click remove @open from #providerListModal"></button>
+						onclick="document.getElementById('providerListModal').removeAttribute('open')">
+					</button>
 					<p>
 						<strong id="auth-type"></strong>
 					</p>

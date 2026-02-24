@@ -30,6 +30,9 @@ public class ErrorController implements org.springframework.boot.webmvc.error.Er
 						: requestUri;
 				errorMessage = "URL not found for code: " + requestUri;
 			}
+			case 403 -> {
+				errorMessage = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
+			}
 		}
 
 		model.addAttribute("errorMessage", errorMessage);

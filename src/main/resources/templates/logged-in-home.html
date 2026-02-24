@@ -24,7 +24,7 @@
 		<!--Doing normal anon urls for now-->
 		<form role="group" hx-post="/urls/new-anon" hx-target="#shorten-url-result" hx-swap="outerHTML"
 			hx-indicator="#shorten-url-result"
-			_="on htmx:beforeRequest add [@aria-busy=true] to #shorten-url-result">
+			onhtmx:before-request="document.querySelector('#shorten-url-result').setAttribute('aria-busy', 'true')">
 
 			<input type="url" name="originalUrl" placeholder="Enter Link" required />
 			<select name="domain" required>

@@ -47,7 +47,11 @@ public class IndexController {
 
 	@PostMapping("/urls/new-anon")
 	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
+		System.out.println("new-anon endpoint hit with domain: " + domain + " and originalUrl: " + originalUrl);
+
 		String shortUrlCode = urlService.createAnonShortUrl(originalUrl).getShortUrl();
+
+		System.out.println("Generated short URL code: " + shortUrlCode);
 
 		AnonShortenUrlResponseDTO result = new AnonShortenUrlResponseDTO(domain + "/" + shortUrlCode,
 				"https://" + domain + "/" + shortUrlCode);

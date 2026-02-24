@@ -1,12 +1,13 @@
 <div id="shorten-url-result">
-	<section id="error-container" th:if="${errorMessage}" class="error-section">
+	<section id="error-container" th:if="${errorMessage}"
+		style="background-color: rgba(255, 0, 0, 0.05); padding-top: 2em; padding-bottom: 2em; font-size: 1.5em;">
 		<strong>Error:</strong> <span th:text="${errorMessage}">Something went wrong.</span>
 	</section>
 
 	<th:block th:if="${errorMessage == null}">
 		<section id="shorten-url-output">
 			<p>
-				<a th:href="${result.fullLink}" class="text-sz-2">
+				<a th:href="${result.fullLink}" style="font-size: 2em;">
 					<i><strong th:text="${result.displayUrl}">URL PLACEHOLDER</strong></i>
 				</a>
 				<br />
