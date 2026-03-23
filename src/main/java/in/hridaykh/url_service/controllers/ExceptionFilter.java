@@ -17,7 +17,7 @@ public class ExceptionFilter {
 	@ExceptionHandler(InvalidUrlException.class)
 	public String handleInvalidUrlException(InvalidUrlException ex, Model model) {
 		model.addAttribute("errorMessage", ex.getMessage());
-		return ViewRegistry.Fragments.MainHomeResult.shortenUrlResult;
+		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
 	}
 
 	@ExceptionHandler(ExpiredUrlException.class)

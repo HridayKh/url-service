@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: main-layout(
+			~{::short-url-header},
+			~{::short-url-main},
+			~{::short-url-footer}
+		)}">
+
+<!--Buttons on Nav-->
+<th:block th:fragment="short-url-header">
+	<li><a href="" role="button">Back</a></li>
+	<li><a href="/oauth/logout">Logout</a></li>
+	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
+</th:block>
+
+<!--Main content-->
+<th:block th:fragment="short-url-main">
+	<section>
+		<h1>
+			Hello User id: <i th:text="${userId}">12</i>!
+		</h1>
+		<p>This is JWT and stateless JWT data extraction in action!</p>
+	</section>
+	<section id="shorten-url-input">
+		<form hx-post="/urls/new" hx-target="#shorten-url-result" hx-swap="outerHTML"
+			hx-indicator="#shorten-url-result">
+
+			<div role="group">
+				<input id="originalUrl" type="url" name="originalUrl" placeholder="url here" required />
+
+				<select id="domain" name="domain" required>
+					<option selected disabled value="">Select Domain</option>
+					<option th:each="domain : ${domainsList}" th:value="${domain}"
+						th:text="${domain}">
+						PLACEHOLDER
+					</option>
+				</select>
+			</div>
+
+			<fieldset>
+				<label>
+					<input type="checkbox" id="togglePassword"> Use Password Protection?
+				</label>
+				<div id="passwordContainer" style="display: none; margin-top: 10px;">
+					<input id="password" type="password" name="password"
+						placeholder="Enter password" />
+				</div>
+			</fieldset>
+
+			<hr>
+
+			<label for="expiryType">Expiry Type *</label>
+			<select id="expiryType" name="expiryType" required>
+				<option value="NONE">NONE</option>
+				<option value="TIME">TIME</option>
+				<option value="USAGE">USAGE</option>
+				<option value="INACTIVITY" selected>INACTIVITY</option>
+			</select>
+
+			<div id="expiry-TIME" class="expiry-group" style="display: none;">
+				<label for="expiryTime">Expiry Date & Time</label>
+				<input id="expiryTime" type="datetime-local" name="expiryTime" />
+			</div>
+
+			<div id="expiry-USAGE" class="expiry-group" style="display: none;">
+				<label for="expiryMaxClicks">Max Clicks</label>
+				<input id="expiryMaxClicks" type="number" min="1" name="expiryMaxClicks"
+					placeholder="eg: 100" />
+			</div>
+
+			<div id="expiry-INACTIVITY" class="expiry-group">
+				<label for="expiryInactivityDurationSeconds">Inactivity Duration (seconds)</label>
+				<input id="expiryInactivityDurationSeconds" type="number" min="1"
+					name="expiryInactivityDurationSeconds" placeholder="eg: 31536000" />
+			</div>
+
+			<input type="submit" value="Create URL" style="margin-top: 20px;" />
+		</form>
+
+		<script>
+			// 1. Password Toggle Logic
+			const passCheckbox = document.getElementById('togglePassword');
+			const passContainer = document.getElementById('passwordContainer');
+
+			passCheckbox.addEventListener('change', function () {
+				passContainer.style.display = this.checked ? 'block' : 'none';
+				if (!this.checked) document.getElementById('password').value = '';
+			});
+
+			// 2. Expiry Type Logic
+			const expirySelect = document.getElementById('expiryType');
+			const expiryGroups = document.querySelectorAll('.expiry-group');
+
+			expirySelect.addEventListener('change', function () {
+				// Hide all groups first
+				expiryGroups.forEach(group => group.style.display = 'none');
+
+				// Show the one that matches the value (if it exists)
+				const targetId = 'expiry-' + this.value;
+				const targetGroup = document.getElementById(targetId);
+				if (targetGroup) {
+					targetGroup.style.display = 'block';
+				}
+			});
+		</script>
+	</section>
+
+	<section id="shorten-url-result">
+		<ins>Ready to shorten your first link!</ins>
+	</section>
+</th:block>
+
+<!--Footer Content-->
+<th:block th:fragment="short-url-footer">
+</th:block>
+
+</html>

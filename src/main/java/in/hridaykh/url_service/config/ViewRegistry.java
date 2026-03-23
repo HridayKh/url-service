@@ -4,9 +4,10 @@ public final class ViewRegistry {
 	private ViewRegistry() {
 	}
 
-	public static final String mainHome = "main-home";
+	public static final String indexAnon = "index-anon";
 	public static final String error = "error";
-	public static final String loggedInHome = "logged-in-home";
+	public static final String index = "index";
+	public static final String createUrl = "create-url";
 
 	public static final class Fragments {
 		private Fragments() {
@@ -14,12 +15,12 @@ public final class ViewRegistry {
 
 		public static final String layout = "fragments/layout";
 		public static final String oauthList = "fragments/oauth-list";
-
-		public static final class MainHomeResult {
-			private MainHomeResult() {
+		
+		public static final class IndexAnonResult {
+			private IndexAnonResult() {
 			}
 
-			public static final String shortenUrlResult = "fragments/main-home-result :: #shorten-url-result";
+			public static final String shortenUrlResult = "fragments/index-anon-result :: #shorten-url-result";
 		}
 	}
 }

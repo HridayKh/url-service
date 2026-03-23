@@ -1,5 +1,7 @@
 package in.hridaykh.url_service.controllers;
 
+import java.time.LocalDateTime;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,7 +36,7 @@ public class IndexController {
 
 			System.out.println("JWT NULL!!!");
 
-			return ViewRegistry.mainHome;
+			return ViewRegistry.indexAnon;
 		}
 
 		System.out.println("JWT FOUND!!!");
@@ -42,7 +44,7 @@ public class IndexController {
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
 
-		return ViewRegistry.loggedInHome;
+		return ViewRegistry.index;
 	}
 
 	@PostMapping("/urls/new-anon")
@@ -57,7 +59,68 @@ public class IndexController {
 				"https://" + domain + "/" + shortUrlCode);
 
 		model.addAttribute("result", result);
-		return ViewRegistry.Fragments.MainHomeResult.shortenUrlResult;
+		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
+	}
+
+	@GetMapping("/new")
+	public String createUrl(Model model, @RequestAttribute(name = "jwt", required = true) UserJwtPayload jwt) {
+		model.addAttribute("domainsList", domainsList.list().split(","));
+		if (jwt == null) {
+			System.out.println("JWT NULL!!!");
+			return "redirect:/";
+		}
+
+		model.addAttribute("userPfp", jwt.pfp());
+		model.addAttribute("userId", jwt.sub());
+
+		return ViewRegistry.createUrl;
+	}
+
+	@PostMapping("/urls/new")
+	public String newUrl(
+			@RequestParam String domain,
+			@RequestParam String originalUrl,
+			@RequestParam(required = false) String password,
+			@RequestParam String expiryType,
+			@RequestParam(required = false) LocalDateTime expiryTime,
+			@RequestParam(required = false) Integer expiryMaxClicks,
+			@RequestParam(required = false) Long expiryInactivityDurationSeconds,
+			Model model) {
+
+		System.out.println("Endpoint hit: " + originalUrl + " with Expiry Type: " + expiryType);
+
+		// 1. Process Password (only if provided)
+		String finalPassword = (password != null && !password.isBlank()) ? password : null;
+
+		// 2. Build the URL based on Expiry Type logic
+		// You'll likely want to pass these into your service layer
+		String shortUrlCode;
+
+		switch (expiryType) {
+			case "TIME":
+				shortUrlCode = urlService.createTimedShortUrl(originalUrl, expiryTime, finalPassword)
+						.getShortUrl();
+				break;
+			case "USAGE":
+				shortUrlCode = urlService
+						.createUsageShortUrl(originalUrl, expiryMaxClicks, finalPassword)
+						.getShortUrl();
+				break;
+			case "INACTIVITY":
+				shortUrlCode = urlService.createInactivityShortUrl(originalUrl,
+						expiryInactivityDurationSeconds, finalPassword).getShortUrl();
+				break;
+			default: // NONE
+				shortUrlCode = urlService.createAnonShortUrl(originalUrl, finalPassword).getShortUrl();
+				break;
+		}
+
+		AnonShortenUrlResponseDTO result = new AnonShortenUrlResponseDTO(
+				domain + "/" + shortUrlCode,
+				"https://" + domain + "/" + shortUrlCode);
+
+		model.addAttribute("result", result);
+		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
 	}
 
 	@GetMapping("/{shortUrlCode}")
