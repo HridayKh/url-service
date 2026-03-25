@@ -100,6 +100,18 @@ public class Url {
 		this.expiryInactivityDurationSeconds = expiryInactivityDurationSeconds;
 	}
 
+	public void setExpiryTime(LocalDateTime expiryTime) {
+		this.expiryTime = expiryTime;
+	}
+
+	public void setExpiryMaxClicks(int expiryMaxClicks) {
+		this.expiryMaxClicks = expiryMaxClicks;
+	}
+
+	public void setPasswordHash(String passwordHash) {
+		this.passwordHash = passwordHash;
+	}
+
 	public String getShortUrl() {
 		return shortUrl;
 	}

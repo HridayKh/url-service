@@ -36,7 +36,7 @@ public class OauthService {
 		switch (providerName) {
 			case GITHUB -> authorizationUrl = "https://github.com/login/oauth/authorize?client_id="
 					+ githubProps.clientId() +
-					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GITHUB&scope=user:email&state=";
+					"&redirect_uri=" + githubProps.callbackBaseUrl() + "/GITHUB&scope=user:email&state=";
 		}
 		String state = oauthUtils.generateState();
 		long expiryTime = System.currentTimeMillis() + Duration.ofMinutes(10).toMillis();

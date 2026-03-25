@@ -21,7 +21,7 @@ public class GithubIntegration {
 
 	public String getAccessToken(String code, GithubProperties githubProperties) {
 		MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-		formData.add("redirect_uri", "https://urls.HridayKh.in/oauth/callback/GITHUB");
+		formData.add("redirect_uri", githubProperties.callbackBaseUrl() + "/GITHUB");
 		formData.add("client_id", githubProperties.clientId());
 		formData.add("client_secret", githubProperties.clientSecret());
 		formData.add("code", code);

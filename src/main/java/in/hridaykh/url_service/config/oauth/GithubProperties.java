@@ -5,5 +5,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "oauth.github")
 public record GithubProperties(
 		String clientId,
-		String clientSecret) {
+		String clientSecret,
+		String callbackBaseUrl) {
 }

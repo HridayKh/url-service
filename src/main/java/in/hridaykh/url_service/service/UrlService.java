@@ -21,6 +21,7 @@ public class UrlService {
 
 	private final ShortUrlRepository urlRepository;
 	private static final int MAX_COLLISION_RETRIES = 3;
+	private static final long DEFAULT_INACTIVITY_SECONDS = Duration.ofDays(365).getSeconds();
 
 	public UrlService(ShortUrlRepository urlRepository) {
 		this.urlRepository = urlRepository;
@@ -28,28 +29,39 @@ public class UrlService {
 
 	@Transactional
 	public Url createAnonShortUrl(String originalUrl) throws InvalidUrlException {
-		if (!UrlUtils.isValidUrl(originalUrl))
-			throw new InvalidUrlException(originalUrl);
+		return createAnonShortUrl(originalUrl, null);
+	}
 
-		// a pregenerated url for quickly testing locally for frontend dev and intergraiton
-		if (originalUrl.startsWith("http://127.0.0.1:8080")) {
-			Url url = new Url();
-			url.setOriginalUrl(originalUrl);
-			url.setShortUrl("222vw");
-			url.setExpiryType(ExpiryType.INACTIVITY);
-			return url;
-		}
-
-		String shortCode = generateUniqueShortCode();
-
-		Url url = new Url();
-		url.setOriginalUrl(originalUrl);
-		url.setShortUrl(shortCode);
+	@Transactional
+	public Url createAnonShortUrl(String originalUrl, String password) throws InvalidUrlException {
+		Url url = buildUrl(originalUrl, password);
 		url.setExpiryType(ExpiryType.INACTIVITY);
+		url.setExpiryInactivityDurationSeconds(DEFAULT_INACTIVITY_SECONDS);
+		return urlRepository.save(url);
+	}
 
-		long ONE_YEAR_SECONDS = Duration.ofDays(365).getSeconds();
-		url.setExpiryInactivityDurationSeconds(ONE_YEAR_SECONDS);
+	@Transactional
+	public Url createTimedShortUrl(String originalUrl, LocalDateTime expiryTime, String password) {
+		Url url = buildUrl(originalUrl, password);
+		url.setExpiryType(ExpiryType.TIME);
+		url.setExpiryTime(expiryTime);
+		return urlRepository.save(url);
+	}
 
+	@Transactional
+	public Url createUsageShortUrl(String originalUrl, Integer expiryMaxClicks, String password) {
+		Url url = buildUrl(originalUrl, password);
+		url.setExpiryType(ExpiryType.USAGE);
+		url.setExpiryMaxClicks(expiryMaxClicks);
+		return urlRepository.save(url);
+	}
+
+	@Transactional
+	public Url createInactivityShortUrl(String originalUrl, Long expiryInactivityDurationSeconds,
+			String password) {
+		Url url = buildUrl(originalUrl, password);
+		url.setExpiryType(ExpiryType.INACTIVITY);
+		url.setExpiryInactivityDurationSeconds(expiryInactivityDurationSeconds);
 		return urlRepository.save(url);
 	}
 
@@ -61,17 +73,32 @@ public class UrlService {
 		if (url.isDeleted())
 			throw new NotFoundUrlException(shortUrlCode);
 
-		if (url.isExpired(LocalDateTime.now())) {
-			url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
+		LocalDateTime now = LocalDateTime.now();
+		if (url.isExpired(now)) {
+			url.markAsDeleted(now, DeleteReason.EXPIRED);
 			urlRepository.save(url);
 			throw new ExpiredUrlException(shortUrlCode);
 		}
 
-		url.setLastClickedAt(LocalDateTime.now());
+		url.setLastClickedAt(now);
 		url.incrementClicksCount();
 		urlRepository.save(url);
 
 		return url.getOriginalUrl();
+	}
+
+	private Url buildUrl(String originalUrl, String password) {
+		if (!UrlUtils.isValidUrl(originalUrl))
+			throw new InvalidUrlException(originalUrl);
+		Url url = new Url();
+		url.setOriginalUrl(originalUrl);
+		url.setShortUrl(generateUniqueShortCode());
+		if (password != null && !password.isBlank()) {
+			// TODO: hash the password with BCrypt/Argon2 before storing.
+			// The passwordHash field must never contain a plaintext password in production.
+			url.setPasswordHash(password);
+		}
+		return url;
 	}
 
 	private String generateUniqueShortCode() {

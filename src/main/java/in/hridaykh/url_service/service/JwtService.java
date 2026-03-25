@@ -2,6 +2,7 @@ package in.hridaykh.url_service.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Base64;
 
 import org.springframework.http.HttpHeaders;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.config.oauth.GithubProperties;
 import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
+import in.hridaykh.url_service.exception.SessionExpiredException;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.GithubUser;
 import in.hridaykh.url_service.model.oauth.TokenPair;
@@ -29,6 +31,14 @@ import in.hridaykh.url_service.config.oauth.OauthConfig;
 
 @Service
 public class JwtService {
+
+	public static final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
+	public static final String JWT_ISSUER = "https://urls.hridaykh.in/oauth/callback";
+	public static final String JWT_AUDIENCE = "urls.hridaykh.in";
+	public static final int JWT_VERSION = 1;
+	public static final int JWT_TOKEN_EXPIRATION_MINUTES = 15;
+	public static final int SESSION_VALIDITY_DAYS = 30;
+
 	private final GithubProperties githubProps;
 	private final OauthUtils oauthUtils;
 	private final UserRepository userRepository;
@@ -36,7 +46,6 @@ public class JwtService {
 	private final UserSessionRepository userSessionsRepository;
 	private final ObjectMapper objectMapper;
 	private final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
-	private final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
 	private final GithubIntegration githubIntegration;
 	private final OauthConfig oauthConfig;
 
@@ -92,28 +101,58 @@ public class JwtService {
 		UserSession session = new UserSession(user, refreshToken);
 		userSessionsRepository.save(session);
 
+		return new TokenPair(generateJwt(user, session.getId()), refreshToken, user);
+	}
+
+	/**
+	 * Rotates the refresh token and issues a new JWT. Throws SessionExpiredException
+	 * if the session does not exist or is older than SESSION_VALIDITY_DAYS.
+	 */
+	@Transactional
+	public TokenPair handleRefresh(String oldRefreshToken) {
+		UserSession session = userSessionsRepository.findByRefreshToken(oldRefreshToken);
+		if (session == null) {
+			System.out.println("No session found for refresh token");
+			throw new SessionExpiredException();
+		}
+
+		if (session.getCreatedAt()
+				.isBefore(LocalDateTime.now().minus(Duration.ofDays(SESSION_VALIDITY_DAYS)))) {
+			System.out.println("Session expired, created at: " + session.getCreatedAt());
+			throw new SessionExpiredException();
+		}
+
+		String newRefreshToken = oauthUtils.createRefreshToken();
+		session.setRefreshToken(newRefreshToken);
+		userSessionsRepository.save(session);
+
+		User user = session.getUser();
+		return new TokenPair(generateJwt(user, session.getId()), newRefreshToken, user);
+	}
+
+	/** Creates a signed JWT string for the given user and session. */
+	public String generateJwt(User user, long sessionId) {
 		long nowInSeconds = System.currentTimeMillis() / 1000;
-		long expInSeconds = nowInSeconds + Duration.ofMinutes(15).toSeconds();
+		long expInSeconds = nowInSeconds + Duration.ofMinutes(JWT_TOKEN_EXPIRATION_MINUTES).toSeconds();
 
-		UserJwtPayload jwt = new UserJwtPayload(
-				"https://urls.hridaykh.in/oauth/callback", // iss
-				user.getId(), // sub
-				"urls.hridaykh.in", // aud
-				expInSeconds, // exp
-				nowInSeconds - 5, // nbf, give 5 seconds of clock skew
-				nowInSeconds, // iat
-				session.getId(), // jti
-				1, // ver
-				user.getEmail(), // email
-				user.getProfilePicture() // pfp
-		);
-		String rawJwtString = objectMapper.writeValueAsString(jwt);
+		UserJwtPayload payload = new UserJwtPayload(
+				JWT_ISSUER,
+				user.getId(),
+				JWT_AUDIENCE,
+				expInSeconds,
+				nowInSeconds - 5, // 5-second clock-skew tolerance
+				nowInSeconds,
+				sessionId,
+				JWT_VERSION,
+				user.getEmail(),
+				user.getProfilePicture());
 
-		String encodedJwtString = encoder.encodeToString(rawJwtString.getBytes(StandardCharsets.UTF_8));
-		String jwtPayload = JWT_HEADER + "." + encodedJwtString;
-		String jwtSign = oauthUtils.signHmacSHA256(jwtPayload);
+		String rawPayloadJson = objectMapper.writeValueAsString(payload);
+		String encodedPayload = encoder.encodeToString(rawPayloadJson.getBytes(StandardCharsets.UTF_8));
+		String unsignedToken = JWT_HEADER + "." + encodedPayload;
+		String signature = oauthUtils.signHmacSHA256(unsignedToken);
 
-		return new TokenPair(jwtPayload + "." + jwtSign, refreshToken, user);
+		return unsignedToken + "." + signature;
 	}
 
 	public void setCookies(HttpServletResponse resp, TokenPair tokenPair) {
@@ -122,7 +161,7 @@ public class JwtService {
 				.httpOnly(true)
 				.secure(true)
 				.path("/")
-				.maxAge(Duration.ofMinutes(15).toSeconds())
+				.maxAge(Duration.ofMinutes(JWT_TOKEN_EXPIRATION_MINUTES).toSeconds())
 				.sameSite("Lax")
 				.build();
 
@@ -131,7 +170,7 @@ public class JwtService {
 				.httpOnly(true)
 				.secure(true)
 				.path("/")
-				.maxAge(Duration.ofDays(30).toSeconds())
+				.maxAge(Duration.ofDays(SESSION_VALIDITY_DAYS).toSeconds())
 				.sameSite("Lax")
 				.build();
 
