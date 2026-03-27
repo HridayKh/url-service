@@ -19,6 +19,7 @@ import org.hibernate.type.SqlTypes;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -84,36 +85,13 @@ public class Url {
 	@Column(updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 
-	public void setOriginalUrl(String originalUrl) {
-		this.originalUrl = originalUrl;
-	}
-
-	public void setShortUrl(String shortUrl) {
-		this.shortUrl = shortUrl;
-	}
-
-	public void setExpiryType(ExpiryType expiryType) {
-		this.expiryType = expiryType;
-	}
-
-	public void setExpiryInactivityDurationSeconds(long expiryInactivityDurationSeconds) {
-		this.expiryInactivityDurationSeconds = expiryInactivityDurationSeconds;
-	}
-
-	public String getShortUrl() {
-		return shortUrl;
-	}
-
-	public void setLastClickedAt(LocalDateTime now) {
-		this.lastClickedAt = now;
-	}
-
-	public String getOriginalUrl() {
+	public String originalUrl() {
 		return originalUrl;
 	}
 
-	public void incrementClicksCount() {
+	public void incrementClicksCount(LocalDateTime now) {
 		this.clickCount++;
+		this.lastClickedAt = now;
 	}
 
 	public boolean isExpired(LocalDateTime now) {
@@ -143,8 +121,55 @@ public class Url {
 		this.deleteReason = deleteReason;
 	}
 
-	public boolean isDeleted() {
-		return isDeleted;
+	public boolean isUsable() {
+		return !isDeleted && isActive;
+	}
+
+	public void createAnonUrl(String originalUrl, String shortUrlCode) {
+		this.originalUrl = originalUrl;
+		this.shortUrl = shortUrlCode;
+		this.expiryType = ExpiryType.INACTIVITY;
+		this.expiryInactivityDurationSeconds = Duration.ofDays(365).getSeconds();
+
+	}
+
+	public void createUserUrl(User user, String originalUrl, String shortUrlCode,
+			String passwordHash) {
+		this.user = user;
+		this.originalUrl = originalUrl;
+		this.shortUrl = shortUrlCode;
+		this.passwordHash = passwordHash;
+	}
+
+	public UrlExpiry UrlExpiry() {
+		return new UrlExpiry(this);
+	}
+
+	public static class UrlExpiry {
+		Url URL;
+
+		public UrlExpiry(Url URL_) {
+			this.URL = URL_;
+		}
+
+		public void none() {
+			URL.expiryType = ExpiryType.NONE;
+		}
+
+		public void time(LocalDateTime expiryTime) {
+			URL.expiryType = ExpiryType.TIME;
+			URL.expiryTime = expiryTime;
+		}
+
+		public void usage(int expiryMaxClicks) {
+			URL.expiryType = ExpiryType.USAGE;
+			URL.expiryMaxClicks = expiryMaxClicks;
+		}
+
+		public void inactivity(long expiryInactivityDurationSeconds) {
+			URL.expiryType = ExpiryType.INACTIVITY;
+			URL.expiryInactivityDurationSeconds = expiryInactivityDurationSeconds;
+		}
 	}
 
 }

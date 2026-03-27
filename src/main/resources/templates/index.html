@@ -19,6 +19,10 @@
 			Hello User id: <i th:text="${userId}">12</i>!
 		</h1>
 		<p>This is JWT and stateless JWT data extraction in action!</p>
+
+		<th:block th:if="${msgSuccess}">
+			<strong style="color: green;" th:text="${msgSuccess}">Success:Action Successful!</strong>
+		</th:block>
 	</section>
 	<section id="shorten-url-input">
 		<!--Doing normal anon urls for now-->

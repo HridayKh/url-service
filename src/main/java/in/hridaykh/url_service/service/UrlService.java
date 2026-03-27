@@ -2,17 +2,23 @@ package in.hridaykh.url_service.service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
+import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.exception.ExpiredUrlException;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
 import in.hridaykh.url_service.exception.ShortCodeCollisionException;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
+import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.Url;
+import in.hridaykh.url_service.model.tables.User;
 import in.hridaykh.url_service.repository.ShortUrlRepository;
+import in.hridaykh.url_service.repository.UserRepository;
+import in.hridaykh.url_service.utils.OauthUtils;
 import in.hridaykh.url_service.utils.UrlUtils;
 import jakarta.transaction.Transactional;
 
@@ -20,37 +26,67 @@ import jakarta.transaction.Transactional;
 public class UrlService {
 
 	private final ShortUrlRepository urlRepository;
+	private final UserRepository userRepository;
+	private final OauthUtils oauthUtils;
 	private static final int MAX_COLLISION_RETRIES = 3;
 
-	public UrlService(ShortUrlRepository urlRepository) {
+	public UrlService(ShortUrlRepository urlRepository, UserRepository userRepository, OauthUtils oauthUtils) {
 		this.urlRepository = urlRepository;
+		this.userRepository = userRepository;
+		this.oauthUtils = oauthUtils;
 	}
 
 	@Transactional
-	public Url createAnonShortUrl(String originalUrl) throws InvalidUrlException {
+	public ShortenUrlResponseDTO createAnonShortUrl(String domain, String originalUrl) throws InvalidUrlException {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
 
-		// a pregenerated url for quickly testing locally for frontend dev and intergraiton
-		if (originalUrl.startsWith("http://127.0.0.1:8080")) {
-			Url url = new Url();
-			url.setOriginalUrl(originalUrl);
-			url.setShortUrl("222vw");
-			url.setExpiryType(ExpiryType.INACTIVITY);
-			return url;
-		}
+		// a pregenerated url for quickly testing locally for frontend dev and
+		// intergraiton
+		if (originalUrl.startsWith("http://127.0.0.1:8080"))
+			return new ShortenUrlResponseDTO(domain + "/222vw", "https://" + domain + "/222vw");
 
 		String shortCode = generateUniqueShortCode();
 
 		Url url = new Url();
-		url.setOriginalUrl(originalUrl);
-		url.setShortUrl(shortCode);
-		url.setExpiryType(ExpiryType.INACTIVITY);
+		url.createAnonUrl(originalUrl, shortCode);
+		urlRepository.save(url);
+		return new ShortenUrlResponseDTO(domain + "/" + shortCode, "https://" + domain + "/" + shortCode);
+	}
 
-		long ONE_YEAR_SECONDS = Duration.ofDays(365).getSeconds();
-		url.setExpiryInactivityDurationSeconds(ONE_YEAR_SECONDS);
+	@Transactional
+	public ShortenUrlResponseDTO createUserUrl(UserJwtPayload jwt, String domain, String originalUrl,
+			boolean toggleCustomUrl, String customUrl, boolean togglePassword, String password,
+			ExpiryType expiryType, LocalDateTime expiryTime, Integer expiryMaxClicks,
+			Long expiryInactivityDurationDays) {
 
-		return urlRepository.save(url);
+		if (!UrlUtils.isValidUrl(originalUrl))
+			throw new InvalidUrlException(originalUrl);
+
+		if (jwt == null)
+			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+
+		// a pregenerated url for quickly testing locally for frontend dev and
+		// intergraiton
+		if (originalUrl.startsWith("http://127.0.0.1:8080") && !toggleCustomUrl)
+			return new ShortenUrlResponseDTO(domain + "/222vw", "https://" + domain + "/222vw");
+
+		String shortUrl = toggleCustomUrl ? customUrl : generateUniqueShortCode();
+		String passHash = togglePassword ? oauthUtils.signHmacSHA256(password) : null;
+
+		Url url = new Url();
+		
+		url.createUserUrl(userRepository.getReferenceById(jwt.sub()), originalUrl, shortUrl, passHash);
+		switch (expiryType) {
+			case NONE -> url.UrlExpiry().none();
+			case TIME -> url.UrlExpiry().time(expiryTime);
+			case USAGE -> url.UrlExpiry().usage(expiryMaxClicks);
+			case INACTIVITY -> url.UrlExpiry()
+					.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
+		}
+		urlRepository.save(url);
+
+		return new ShortenUrlResponseDTO(domain + "/" + shortUrl, "https://" + domain + "/" + shortUrl);
 	}
 
 	@Transactional
@@ -58,7 +94,7 @@ public class UrlService {
 		Url url = urlRepository.findByShortUrl(shortUrlCode)
 				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
 
-		if (url.isDeleted())
+		if (!url.isUsable())
 			throw new NotFoundUrlException(shortUrlCode);
 
 		if (url.isExpired(LocalDateTime.now())) {
@@ -67,11 +103,10 @@ public class UrlService {
 			throw new ExpiredUrlException(shortUrlCode);
 		}
 
-		url.setLastClickedAt(LocalDateTime.now());
-		url.incrementClicksCount();
+		url.incrementClicksCount(LocalDateTime.now());
 		urlRepository.save(url);
 
-		return url.getOriginalUrl();
+		return url.originalUrl();
 	}
 
 	private String generateUniqueShortCode() {

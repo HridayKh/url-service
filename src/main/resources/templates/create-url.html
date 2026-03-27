@@ -7,7 +7,7 @@
 
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
-	<li><a href="" role="button">Back</a></li>
+	<li><a href="/" role="button">Back</a></li>
 	<li><a href="/oauth/logout">Logout</a></li>
 	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
 </th:block>
@@ -16,16 +16,20 @@
 <th:block th:fragment="short-url-main">
 	<section>
 		<h1>
-			Hello User id: <i th:text="${userId}">12</i>!
+			Generate Short URL
 		</h1>
-		<p>This is JWT and stateless JWT data extraction in action!</p>
+		<th:block th:if="${error}">
+			<p th:text="${error}" style="color: red;">
+				<strong>Error:</strong> <span th:text="${error}">Something went wrong.</span>
+			</p>
+		</th:block>
 	</section>
 	<section id="shorten-url-input">
-		<form hx-post="/urls/new" hx-target="#shorten-url-result" hx-swap="outerHTML"
-			hx-indicator="#shorten-url-result">
+		<form hx-post="/urls/new" hx-swap="outerHTML">
 
 			<div role="group">
-				<input id="originalUrl" type="url" name="originalUrl" placeholder="url here" required />
+				<input id="originalUrl" type="url" name="originalUrl" placeholder="Enter Link"
+					required />
 
 				<select id="domain" name="domain" required>
 					<option selected disabled value="">Select Domain</option>
@@ -38,7 +42,19 @@
 
 			<fieldset>
 				<label>
-					<input type="checkbox" id="togglePassword"> Use Password Protection?
+					<input type="checkbox" name="toggleCustomUrl" id="toggleCustomUrl"> Use Custom
+					Url?
+				</label>
+				<div id="customUrlContainer" style="display: none; margin-top: 10px;">
+					<input id="customUrl" type="text" name="customUrl"
+						placeholder="Enter custom URL" />
+				</div>
+			</fieldset>
+
+			<fieldset>
+				<label>
+					<input type="checkbox" name="togglePassword" id="togglePassword"> Use Password
+					Protection?
 				</label>
 				<div id="passwordContainer" style="display: none; margin-top: 10px;">
 					<input id="password" type="password" name="password"
@@ -50,10 +66,10 @@
 
 			<label for="expiryType">Expiry Type *</label>
 			<select id="expiryType" name="expiryType" required>
-				<option value="NONE">NONE</option>
-				<option value="TIME">TIME</option>
-				<option value="USAGE">USAGE</option>
-				<option value="INACTIVITY" selected>INACTIVITY</option>
+				<option value="NONE" selected>No Expiry</option>
+				<option value="TIME">At Specific Time</option>
+				<option value="USAGE">Based on Click Count</option>
+				<option value="INACTIVITY">Based on Inactivity</option>
 			</select>
 
 			<div id="expiry-TIME" class="expiry-group" style="display: none;">
@@ -67,10 +83,10 @@
 					placeholder="eg: 100" />
 			</div>
 
-			<div id="expiry-INACTIVITY" class="expiry-group">
-				<label for="expiryInactivityDurationSeconds">Inactivity Duration (seconds)</label>
-				<input id="expiryInactivityDurationSeconds" type="number" min="1"
-					name="expiryInactivityDurationSeconds" placeholder="eg: 31536000" />
+			<div id="expiry-INACTIVITY" class="expiry-group" style="display: none;">
+				<label for="expiryInactivityDurationDays">Inactivity Duration (days)</label>
+				<input id="expiryInactivityDurationDays" type="number" min="1"
+					name="expiryInactivityDurationDays" placeholder="eg: 31536000" />
 			</div>
 
 			<input type="submit" value="Create URL" style="margin-top: 20px;" />
@@ -86,7 +102,16 @@
 				if (!this.checked) document.getElementById('password').value = '';
 			});
 
-			// 2. Expiry Type Logic
+			// 2. Custom URL Toggle Logic
+			const customUrlCheckBox = document.getElementById('toggleCustomUrl');
+			const customUrlContainer = document.getElementById('customUrlContainer');
+
+			customUrlCheckBox.addEventListener('change', function () {
+				customUrlContainer.style.display = this.checked ? 'block' : 'none';
+				if (!this.checked) document.getElementById('customUrl').value = '';
+			});
+
+			// 3. Expiry Type Logic
 			const expirySelect = document.getElementById('expiryType');
 			const expiryGroups = document.querySelectorAll('.expiry-group');
 
@@ -102,10 +127,6 @@
 				}
 			});
 		</script>
-	</section>
-
-	<section id="shorten-url-result">
-		<ins>Ready to shorten your first link!</ins>
 	</section>
 </th:block>
 

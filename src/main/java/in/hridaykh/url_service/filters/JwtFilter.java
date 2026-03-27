@@ -158,6 +158,7 @@ public class JwtFilter extends OncePerRequestFilter {
 	}
 
 	public TokenPair handleRefresh(String oldRefreshToken) {
+		System.out.println("\n\n\n\n\n\n\n\nHandling token refresh for refresh token: " + oldRefreshToken + "\n\n\n\n\n\n\n\n");
 		UserSession session = userSessionsRepository.findByRefreshToken(oldRefreshToken);
 		if (session == null) {
 			System.out.println("No session found for refresh token");
@@ -205,7 +206,7 @@ public class JwtFilter extends OncePerRequestFilter {
 	}
 
 	private void clearCookies(HttpServletResponse resp) {
-		Cookie jwtCookie = new Cookie(oauthConfig.jwtCookieName(), "");
+		Cookie jwtCookie = new Cookie(oauthConfig.jwtCookieName(), "jwt");
 		jwtCookie.setMaxAge(0);
 		jwtCookie.setPath("/");
 
