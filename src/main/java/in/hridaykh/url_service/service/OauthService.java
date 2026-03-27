@@ -6,8 +6,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
-import in.hridaykh.url_service.config.oauth.GithubProperties;
-import in.hridaykh.url_service.config.oauth.OauthConfig;
+import in.hridaykh.url_service.config.GithubProperties;
+import in.hridaykh.url_service.config.OauthConfig;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;

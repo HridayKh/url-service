@@ -8,7 +8,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
-import in.hridaykh.url_service.config.oauth.GithubProperties;
 import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.GithubUser;
@@ -25,7 +24,8 @@ import in.hridaykh.url_service.utils.OauthUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import tools.jackson.databind.ObjectMapper;
-import in.hridaykh.url_service.config.oauth.OauthConfig;
+import in.hridaykh.url_service.config.GithubProperties;
+import in.hridaykh.url_service.config.OauthConfig;
 
 @Service
 public class JwtService {

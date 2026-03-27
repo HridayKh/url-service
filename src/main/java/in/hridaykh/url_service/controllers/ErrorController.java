@@ -33,6 +33,9 @@ public class ErrorController implements org.springframework.boot.webmvc.error.Er
 			case 403 -> {
 				errorMessage = (String) request.getAttribute(RequestDispatcher.ERROR_REQUEST_URI);
 			}
+			case 401 -> {
+				return "redirect:/";
+			}
 		}
 
 		model.addAttribute("errorMessage", errorMessage);

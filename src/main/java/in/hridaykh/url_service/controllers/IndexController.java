@@ -1,5 +1,6 @@
 package in.hridaykh.url_service.controllers;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 
 import org.springframework.stereotype.Controller;
@@ -9,14 +10,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriUtils;
 
 import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
-import in.hridaykh.url_service.model.tables.Url;
 import in.hridaykh.url_service.service.UrlService;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 public class IndexController {
@@ -29,7 +31,10 @@ public class IndexController {
 	}
 
 	@GetMapping("/")
-	public String index(Model model, @RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt) {
+	public String index(@RequestParam(name = "scs", required = false) String scs,
+			@RequestParam(name = "du", required = false) String du,
+			@RequestParam(name = "fl", required = false) String fl,
+			Model model, @RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 
 		System.out.println("\n\n\tINDEX CONTROLLER\nChecking jwt in index controller");
@@ -46,6 +51,10 @@ public class IndexController {
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
 
+		model.addAttribute("isSuccess", "1".equals(scs));
+		model.addAttribute("displayUrl", du);
+		model.addAttribute("fullLink", fl);
+
 		return ViewRegistry.index;
 	}
 
@@ -58,7 +67,7 @@ public class IndexController {
 	}
 
 	@GetMapping("/new")
-	public String createUrl(Model model, @RequestAttribute(name = "jwt", required = true) UserJwtPayload jwt) {
+	public String createUrlPage(Model model, @RequestAttribute(name = "jwt", required = true) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 		if (jwt == null) {
 			System.out.println("JWT NULL!!!");
@@ -75,15 +84,15 @@ public class IndexController {
 	public String newUrl(@RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt,
 			@RequestParam String originalUrl,
 			@RequestParam String domain,
-			@RequestParam boolean toggleCustomUrl,
-			@RequestParam String customUrl,
-			@RequestParam boolean togglePassword,
+			@RequestParam(required = false, defaultValue = "false") boolean toggleCustomUrl,
+			@RequestParam(required = false) String customUrl,
+			@RequestParam(required = false, defaultValue = "false") boolean togglePassword,
 			@RequestParam(required = false) String password,
 			@RequestParam ExpiryType expiryType,
 			@RequestParam(required = false) LocalDateTime expiryTime,
 			@RequestParam(required = false) Integer expiryMaxClicks,
 			@RequestParam(required = false) Long expiryInactivityDurationDays,
-			Model model) {
+			Model model, HttpServletResponse response) {
 
 		boolean validDomain = false;
 		for (String d : domainsList.list().split(",")) {
@@ -96,16 +105,18 @@ public class IndexController {
 		if (!validDomain) {
 			System.out.println("Invalid domain selected: " + domain);
 			model.addAttribute("error", "Invalid domain selected");
-			return createUrl(model, jwt);
+			return createUrlPage(model, jwt);
 		}
 
 		ShortenUrlResponseDTO result = urlService.createUserUrl(jwt, domain, originalUrl, toggleCustomUrl,
 				customUrl, togglePassword, password, expiryType, expiryTime, expiryMaxClicks,
 				expiryInactivityDurationDays);
+		System.out.println("Generated short URL code: " + result.displayUrl());
+		String encodedDu = UriUtils.encode(result.displayUrl(), StandardCharsets.UTF_8);
+		String encodedFl = UriUtils.encode(result.fullLink(), StandardCharsets.UTF_8);
 
-		model.addAttribute("msgSuccess",
-				"URL shortened successfully! Your short URL is: " + result.displayUrl());
-		return "redirect:/";
+		response.setHeader("HX-Redirect", "/?scs=1&du=" + encodedDu + "&fl=" + encodedFl);
+		return ViewRegistry.emptyPage;
 	}
 
 	@GetMapping("/{shortUrlCode}")

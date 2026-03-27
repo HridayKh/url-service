@@ -157,18 +157,33 @@ public class Url {
 		}
 
 		public void time(LocalDateTime expiryTime) {
+			if (expiryTime == null)
+				throw new IllegalArgumentException("Expiry time must be provided for TIME expiry type");
 			URL.expiryType = ExpiryType.TIME;
 			URL.expiryTime = expiryTime;
 		}
 
-		public void usage(int expiryMaxClicks) {
+		public void usage(Integer expiryMaxClicks) {
+			if (expiryMaxClicks == null)
+				throw new IllegalArgumentException(
+						"Expiry max clicks must be provided for USAGE expiry type");
 			URL.expiryType = ExpiryType.USAGE;
 			URL.expiryMaxClicks = expiryMaxClicks;
 		}
 
-		public void inactivity(long expiryInactivityDurationSeconds) {
+		public void inactivity(Long expiryInactivityDurationSeconds) {
+			if (expiryInactivityDurationSeconds == null)
+				throw new IllegalArgumentException(
+						"Expiry inactivity duration must be provided for INACTIVITY expiry type");
 			URL.expiryType = ExpiryType.INACTIVITY;
 			URL.expiryInactivityDurationSeconds = expiryInactivityDurationSeconds;
+		}
+
+		public void inactivityDays(Long expiryInactivityDurationDays) {
+			if (expiryInactivityDurationDays == null)
+				throw new IllegalArgumentException(
+						"Expiry inactivity duration days must be provided for INACTIVITY expiry type");
+			this.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
 		}
 	}
 

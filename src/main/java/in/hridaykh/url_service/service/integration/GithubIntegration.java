@@ -6,7 +6,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
 
-import in.hridaykh.url_service.config.oauth.GithubProperties;
+import in.hridaykh.url_service.config.GithubProperties;
 import in.hridaykh.url_service.dtos.oauth.GithubAccessTokenDTO;
 import in.hridaykh.url_service.model.oauth.GithubUser;
 

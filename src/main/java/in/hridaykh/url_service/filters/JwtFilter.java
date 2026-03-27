@@ -10,8 +10,8 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import in.hridaykh.url_service.config.oauth.JwtAuthPaths;
-import in.hridaykh.url_service.config.oauth.OauthConfig;
+import in.hridaykh.url_service.config.JwtAuthPaths;
+import in.hridaykh.url_service.config.OauthConfig;
 import in.hridaykh.url_service.exception.SessionExpiredException;
 import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
@@ -25,10 +25,9 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import tools.jackson.databind.ObjectMapper;
 
-@Component
-@Order(2)
 public class JwtFilter extends OncePerRequestFilter {
 	private static final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
 	private static final String JWT_ISSUER = "https://urls.hridaykh.in/oauth/callback";
@@ -36,7 +35,7 @@ public class JwtFilter extends OncePerRequestFilter {
 	private static final int JWT_VERSION = 1;
 	private static final int JWT_TOKEN_EXPIRATION_MINUTES = 15;
 	private static final int SESSION_VALIDITY_DAYS = 30;
-	private static final int CLOCK_SKEW_SECONDS = 30;
+	private static final int NBF_CLOCK_SKEW_SECONDS = 30;
 	private static final String HOME_PATH = "/";
 	private static final String JWT_REQUEST_ATTRIBUTE = "jwt";
 
@@ -76,8 +75,16 @@ public class JwtFilter extends OncePerRequestFilter {
 
 		try {
 			UserJwtPayload jwt = extractAndValidateJwt(req, resp, isHomePath);
-			if (jwt != null)
-				req.setAttribute(JWT_REQUEST_ATTRIBUTE, jwt);
+			if (jwt == null) {
+				System.out.println("No valid JWT found in request");
+				if (!isHomePath) {
+					resp.sendError(HttpServletResponse.SC_UNAUTHORIZED,
+							"Invalid Session, Please Login!");
+					return;
+				}
+			}
+			System.out.println("Valid JWT found for user ID: " + jwt.sub());
+			req.setAttribute(JWT_REQUEST_ATTRIBUTE, jwt);
 		} catch (Exception e) {
 			System.out.println("JWT processing failed: " + e.getMessage());
 			clearCookies(resp);
@@ -95,7 +102,6 @@ public class JwtFilter extends OncePerRequestFilter {
 		Cookie[] cookiesArr = req.getCookies();
 		if (cookiesArr == null) {
 			System.out.println("No cookies found in request");
-			clearCookies(resp);
 			return null;
 		}
 
@@ -109,11 +115,29 @@ public class JwtFilter extends OncePerRequestFilter {
 				refreshTokenCookie = cookie;
 		}
 
-		if (jwtCookie == null || refreshTokenCookie == null || jwtCookie.getValue().isBlank()
-				|| refreshTokenCookie.getValue().isBlank()) {
-			System.out.println("JWT or refresh token cookie is missing or blank");
+		if (refreshTokenCookie == null || refreshTokenCookie.getValue().isBlank()) {
+			System.out.println("Refresh token cookie is missing or blank");
 			clearCookies(resp);
 			return null;
+		}
+
+		if (jwtCookie == null || jwtCookie.getValue().isBlank()) {
+			System.out.println("JWT null but refresh token is not, attempting refresh");
+			TokenPair tokenPair = handleRefresh(refreshTokenCookie.getValue());
+			if (tokenPair == null) {
+				System.out.println("Token refresh failed");
+				clearCookies(resp);
+				return null;
+			}
+			jwtService.setCookies(resp, tokenPair);
+			System.out.println("JWT successfully refreshed when it was null but RT was not");
+			UserJwtPayload jwt = decodeJwt(tokenPair.jwt());
+			if (!isValidJwtPayload(jwt)) {
+				System.out.println("Refreshed JWT payload is invalid");
+				clearCookies(resp);
+				return null;
+			}
+			return jwt;
 		}
 
 		UserJwtPayload jwt = decodeJwt(jwtCookie.getValue());
@@ -123,19 +147,31 @@ public class JwtFilter extends OncePerRequestFilter {
 			clearCookies(resp);
 			return null;
 		}
+		System.out.println("JWT valid");
 
 		long nowInSeconds = System.currentTimeMillis() / 1000;
 
-		if (jwt.nbf() > nowInSeconds + CLOCK_SKEW_SECONDS) {
+		if (jwt.nbf() > nowInSeconds + NBF_CLOCK_SKEW_SECONDS) {
 			System.out.println("JWT not yet valid. NBF: " + jwt.nbf() + " Now: " + nowInSeconds);
+			clearCookies(resp);
 			return null;
 		}
 
 		if (jwt.exp() < nowInSeconds) {
 			System.out.println("JWT expired, attempting refresh");
 			TokenPair tokenPair = handleRefresh(refreshTokenCookie.getValue());
+			if (tokenPair == null) {
+				System.out.println("Token refresh failed");
+				clearCookies(resp);
+				return null;
+			}
 			jwtService.setCookies(resp, tokenPair);
 			jwt = decodeJwt(tokenPair.jwt());
+			if (!isValidJwtPayload(jwt)) {
+				System.out.println("Refreshed JWT payload is invalid");
+				clearCookies(resp);
+				return null;
+			}
 		}
 
 		System.out.println("JWT successfully validated and processed");
@@ -157,18 +193,19 @@ public class JwtFilter extends OncePerRequestFilter {
 		return validIssuer && validSubject && validAudience && validIat && validJti && validVersion;
 	}
 
+	@Transactional
 	public TokenPair handleRefresh(String oldRefreshToken) {
-		System.out.println("\n\n\n\n\n\n\n\nHandling token refresh for refresh token: " + oldRefreshToken + "\n\n\n\n\n\n\n\n");
-		UserSession session = userSessionsRepository.findByRefreshToken(oldRefreshToken);
+		System.out.println("\n\n\n\n\n\n\n\nHandling token refresh for refresh token\n\n\n\n\n\n\n\n");
+		UserSession session = userSessionsRepository.findByRefreshTokenWithUser(oldRefreshToken);
 		if (session == null) {
 			System.out.println("No session found for refresh token");
-			throw new SessionExpiredException();
+			return null;
 		}
 
 		if (session.getCreatedAt()
 				.isBefore(LocalDateTime.now().minus(Duration.ofDays(SESSION_VALIDITY_DAYS)))) {
 			System.out.println("Session expired, created at: " + session.getCreatedAt());
-			throw new SessionExpiredException();
+			return null;
 		}
 
 		String newRefreshToken = oauthUtils.createRefreshToken();
@@ -206,7 +243,7 @@ public class JwtFilter extends OncePerRequestFilter {
 	}
 
 	private void clearCookies(HttpServletResponse resp) {
-		Cookie jwtCookie = new Cookie(oauthConfig.jwtCookieName(), "jwt");
+		Cookie jwtCookie = new Cookie(oauthConfig.jwtCookieName(), "");
 		jwtCookie.setMaxAge(0);
 		jwtCookie.setPath("/");
 

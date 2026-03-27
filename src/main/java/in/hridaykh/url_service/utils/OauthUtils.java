@@ -12,7 +12,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.springframework.stereotype.Component;
 
-import in.hridaykh.url_service.config.oauth.OauthConfig;
+import in.hridaykh.url_service.config.OauthConfig;
 import in.hridaykh.url_service.exception.StateGenerationException;
 
 @Component

@@ -20,8 +20,13 @@
 		</h1>
 		<p>This is JWT and stateless JWT data extraction in action!</p>
 
-		<th:block th:if="${msgSuccess}">
-			<strong style="color: green;" th:text="${msgSuccess}">Success:Action Successful!</strong>
+		<th:block th:if="${isSuccess}">
+			<strong style="color: green;">
+				URL shortened successfully! Your short URL is:
+				<a th:href="${fullLink}" th:text="${displayUrl}">
+					urls.hridaykh.in/placeholder
+				</a>
+			</strong>
 		</th:block>
 	</section>
 	<section id="shorten-url-input">
@@ -44,6 +49,11 @@
 	<section id="shorten-url-result">
 		<ins>Ready to shorten your first link!</ins>
 	</section>
+	<script type="text/javascript">
+		if (window.location.search.includes('scs') || window.location.search.includes('du') || window.location.search.includes('fl')) {
+			window.history.replaceState({}, document.title, window.location.pathname);
+		}
+	</script>
 </th:block>
 
 <!--Footer Content-->

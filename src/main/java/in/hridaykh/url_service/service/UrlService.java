@@ -4,6 +4,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
@@ -60,31 +61,40 @@ public class UrlService {
 			ExpiryType expiryType, LocalDateTime expiryTime, Integer expiryMaxClicks,
 			Long expiryInactivityDurationDays) {
 
-		if (!UrlUtils.isValidUrl(originalUrl))
-			throw new InvalidUrlException(originalUrl);
-
 		if (jwt == null)
 			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
 
-		// a pregenerated url for quickly testing locally for frontend dev and
-		// intergraiton
-		if (originalUrl.startsWith("http://127.0.0.1:8080") && !toggleCustomUrl)
-			return new ShortenUrlResponseDTO(domain + "/222vw", "https://" + domain + "/222vw");
+		if (!UrlUtils.isValidUrl(originalUrl))
+			throw new InvalidUrlException(originalUrl);
 
+		if (toggleCustomUrl && (customUrl == null || customUrl.isBlank()))
+			throw new IllegalArgumentException(
+					"Custom URL code must be provided when toggleCustomUrl is true");
 		String shortUrl = toggleCustomUrl ? customUrl : generateUniqueShortCode();
+
+		if (togglePassword && (password == null || password.isBlank()))
+			throw new IllegalArgumentException(
+					"Password must be provided when togglePassword is true");
 		String passHash = togglePassword ? oauthUtils.signHmacSHA256(password) : null;
 
 		Url url = new Url();
-		
 		url.createUserUrl(userRepository.getReferenceById(jwt.sub()), originalUrl, shortUrl, passHash);
 		switch (expiryType) {
 			case NONE -> url.UrlExpiry().none();
 			case TIME -> url.UrlExpiry().time(expiryTime);
 			case USAGE -> url.UrlExpiry().usage(expiryMaxClicks);
-			case INACTIVITY -> url.UrlExpiry()
-					.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
+			case INACTIVITY -> url.UrlExpiry().inactivityDays(expiryInactivityDurationDays);
 		}
-		urlRepository.save(url);
+		try {
+			urlRepository.saveAndFlush(url);
+		} catch (DataIntegrityViolationException e) {
+			if (toggleCustomUrl) {
+				throw new IllegalArgumentException(
+						"The custom code '" + shortUrl + "' is already taken.");
+			} else {
+				throw new RuntimeException("A collision occurred, please try again.");
+			}
+		}
 
 		return new ShortenUrlResponseDTO(domain + "/" + shortUrl, "https://" + domain + "/" + shortUrl);
 	}

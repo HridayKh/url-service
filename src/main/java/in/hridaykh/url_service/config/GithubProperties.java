@@ -1,4 +1,4 @@
-package in.hridaykh.url_service.config.oauth;
+package in.hridaykh.url_service.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

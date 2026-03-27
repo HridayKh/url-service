@@ -16,8 +16,6 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-@Component
-@Order(1)
 public class SecurityFilter extends OncePerRequestFilter {
 	private static final String CSRF_COOKIE_NAME = "XSRF-TOKEN";
 	private static final String CSRF_HEADER_NAME = "X-XSRF-TOKEN";

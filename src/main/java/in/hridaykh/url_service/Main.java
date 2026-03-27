@@ -5,8 +5,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 import in.hridaykh.url_service.config.DomainsList;
-import in.hridaykh.url_service.config.oauth.GithubProperties;
-import in.hridaykh.url_service.config.oauth.OauthConfig;
+import in.hridaykh.url_service.config.GithubProperties;
+import in.hridaykh.url_service.config.OauthConfig;
 
 @SpringBootApplication
 @EnableConfigurationProperties({GithubProperties.class, OauthConfig.class, DomainsList.class})

@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import in.hridaykh.url_service.config.OauthConfig;
 import in.hridaykh.url_service.config.ViewRegistry;
-import in.hridaykh.url_service.config.oauth.OauthConfig;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.TokenPair;

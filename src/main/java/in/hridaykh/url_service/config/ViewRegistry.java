@@ -1,13 +1,15 @@
 package in.hridaykh.url_service.config;
 
 public final class ViewRegistry {
+	
 	private ViewRegistry() {
 	}
-
+	
 	public static final String indexAnon = "index-anon";
 	public static final String error = "error";
 	public static final String index = "index";
 	public static final String createUrl = "create-url";
+	public static final String emptyPage = "empty-page";
 
 	public static final class Fragments {
 		private Fragments() {
