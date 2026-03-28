@@ -14,40 +14,60 @@
 
 <!--Main content-->
 <th:block th:fragment="short-url-main">
-	<section>
-		<h1>
-			Hello User id: <i th:text="${userId}">12</i>!
-		</h1>
-		<p>This is JWT and stateless JWT data extraction in action!</p>
-
+	<section id="urls-list">
 		<th:block th:if="${isSuccess}">
-			<strong style="color: green;">
-				URL shortened successfully! Your short URL is:
-				<a th:href="${fullLink}" th:text="${displayUrl}">
-					urls.hridaykh.in/placeholder
-				</a>
-			</strong>
+			<ins style="display: block; margin-bottom: 1rem;">
+				<strong>URL shortened!</strong> Your short URL is:
+				<a th:href="${fullLink}" th:text="${displayUrl}">urls.hridaykh.in/placeholder</a>
+			</ins>
 		</th:block>
-	</section>
-	<section id="shorten-url-input">
-		<!--Doing normal anon urls for now-->
-		<form role="group" hx-post="/urls/new-anon" hx-target="#shorten-url-result" hx-swap="outerHTML"
-			hx-indicator="#shorten-url-result">
 
-			<input type="url" name="originalUrl" placeholder="Enter Link" required />
-			<select name="domain" required>
-				<option selected disabled value="">Select Domain</option>
-				<option th:each="domain : ${domainsList}" th:value="${domain}" th:text="${domain}">
-					PLACEHOLDER
-				</option>
-			</select>
-
-			<input type="submit" value="Shorten" />
-		</form>
-	</section>
-
-	<section id="shorten-url-result">
-		<ins>Ready to shorten your first link!</ins>
+		<figure>
+			<table>
+				<thead>
+					<tr>
+						<th scope="col">Short URL</th>
+						<th scope="col">Orignal URL</th>
+						<th scope="col">Stats</th>
+						<th scope="col" style="text-align: right;"></th>
+						<th scope="col" style="text-align: right;"></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:each="url : ${urls}">
+						<td>
+							<a th:href="${url.fullLink}" th:text="${url.displayUrl}"
+								target="_blank"></a>
+						</td>
+						<td>
+							<a th:href="${url.orignalUrl}" th:text="${url.orignalUrl}"
+								target="_blank"></a>
+						</td>
+						<td>
+							<small style="color: var(--pico-muted-color);">
+								<span th:text="${url.clickCount}">0</span> clicks
+								•
+								Last visited: <span th:text="${url.lastClicked}">Today</span>
+							</small>
+						</td>
+						<td style="text-align: right;">
+							<a href="" th:href="@{/edit/{id}(id=${url.id})}"
+								style="text-decoration: none;">
+								Edit
+							</a>
+						</td>
+						<td style="text-align: right;">
+							<a href="" th:attr="hx-post=@{/delete/{id}(id=${url.id})}"
+								hx-confirm="Are you sure you want to delete this link?"
+								hx-target="closest tr" hx-swap="outerHTML"
+								style="text-decoration: none;">
+								Delete
+							</a>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</figure>
 	</section>
 	<script type="text/javascript">
 		if (window.location.search.includes('scs') || window.location.search.includes('du') || window.location.search.includes('fl')) {

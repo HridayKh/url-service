@@ -195,7 +195,7 @@ public class JwtFilter extends OncePerRequestFilter {
 
 	@Transactional
 	public TokenPair handleRefresh(String oldRefreshToken) {
-		System.out.println("\n\n\n\n\n\n\n\nHandling token refresh for refresh token\n\n\n\n\n\n\n\n");
+		System.out.println("Handling token refresh for refresh token");
 		UserSession session = userSessionsRepository.findByRefreshTokenWithUser(oldRefreshToken);
 		if (session == null) {
 			System.out.println("No session found for refresh token");

@@ -15,6 +15,7 @@ import org.springframework.web.util.UriUtils;
 import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
+import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.service.UrlService;
@@ -54,6 +55,8 @@ public class IndexController {
 		model.addAttribute("isSuccess", "1".equals(scs));
 		model.addAttribute("displayUrl", du);
 		model.addAttribute("fullLink", fl);
+
+		model.addAttribute("urls", urlService.getUserUrls(jwt));
 
 		return ViewRegistry.index;
 	}

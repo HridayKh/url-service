@@ -1,13 +1,13 @@
 package in.hridaykh.url_service.service;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Optional;
+import java.util.List;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
+import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.exception.ExpiredUrlException;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
@@ -16,7 +16,6 @@ import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.Url;
-import in.hridaykh.url_service.model.tables.User;
 import in.hridaykh.url_service.repository.ShortUrlRepository;
 import in.hridaykh.url_service.repository.UserRepository;
 import in.hridaykh.url_service.utils.OauthUtils;
@@ -126,6 +125,16 @@ public class UrlService {
 				return code;
 		}
 		throw new ShortCodeCollisionException(MAX_COLLISION_RETRIES);
+	}
+
+	@Transactional
+	public UrlsList[] getUserUrls(UserJwtPayload jwt) {
+		if (jwt == null)
+			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+
+		List<UrlsList> urls = urlRepository.findAllUrlsByUserId(jwt.sub());
+
+		return urls.toArray(new UrlsList[0]);
 	}
 
 }
