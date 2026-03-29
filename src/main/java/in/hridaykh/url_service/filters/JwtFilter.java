@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import in.hridaykh.url_service.config.JwtAuthPaths;
@@ -45,22 +46,29 @@ public class JwtFilter extends OncePerRequestFilter {
 	private final UserSessionRepository userSessionsRepository;
 	private final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
 	private final JwtService jwtService;
+	private final AntPathMatcher pathMatcher;
 
 	public JwtFilter(OauthConfig oauthConfig, OauthUtils oauthUtils, ObjectMapper objectMapper,
-			UserSessionRepository userSessionsRepository, JwtService jwtService) {
+			UserSessionRepository userSessionsRepository, JwtService jwtService,
+			AntPathMatcher pathMatcher) {
 		this.oauthConfig = oauthConfig;
 		this.oauthUtils = oauthUtils;
 		this.objectMapper = objectMapper;
 		this.userSessionsRepository = userSessionsRepository;
 		this.jwtService = jwtService;
+		this.pathMatcher = pathMatcher;
 	}
 
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) {
 		String path = request.getServletPath();
-		boolean shouldFilter = JwtAuthPaths.AUTH_PATHS.contains(path);
-		System.out.println("JWT Filter check - Path: " + path + ", Should filter: " + shouldFilter);
-		return !shouldFilter;
+
+		boolean matchesAuthPath = JwtAuthPaths.AUTH_PATHS.stream()
+				.anyMatch(pattern -> pathMatcher.match(pattern, path));
+
+		System.out.println("JWT Filter check - Path: " + path + ", Should filter: " + matchesAuthPath);
+
+		return !matchesAuthPath;
 	}
 
 	@Override

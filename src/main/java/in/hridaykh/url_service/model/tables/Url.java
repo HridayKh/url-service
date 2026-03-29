@@ -16,6 +16,8 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import in.hridaykh.url_service.dtos.DeletedUrlsList;
+import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 
@@ -141,6 +143,36 @@ public class Url {
 		this.passwordHash = passwordHash;
 	}
 
+	public UrlsList toUrlList(String domain) {
+		String id = String.valueOf(this.id);
+		String displayUrl = domain + this.shortUrl;
+		String fullLink = "https://" + domain + this.shortUrl;
+		String originalUrl = this.originalUrl;
+		String lastClicked = this.lastClickedAt != null ? String.valueOf(this.lastClickedAt) : "Never";
+		int clickCount = this.clickCount;
+		return new UrlsList(id, displayUrl, fullLink, originalUrl, lastClicked, clickCount);
+	}
+
+	public DeletedUrlsList toDeletedUrlList(String domain) {
+		String id = String.valueOf(this.id);
+		String displayUrl = domain + this.shortUrl;
+		String fullLink = "https://" + domain + this.shortUrl;
+		String originalUrl = this.originalUrl;
+		String deletedAt = this.deletedAt != null ? String.valueOf(this.deletedAt) : "Unknown";
+		return new DeletedUrlsList(id, displayUrl, fullLink, originalUrl, deletedAt);
+	}
+
+	public void markAsRestored(LocalDateTime now) {
+		this.isDeleted = false;
+		this.isActive = true;
+		this.deletedAt = null;
+		this.deleteReason = null;
+		this.expiryType = ExpiryType.NONE;
+		this.expiryTime = null;
+		this.expiryMaxClicks = null;
+		this.expiryInactivityDurationSeconds = null;
+	}
+
 	public UrlExpiry UrlExpiry() {
 		return new UrlExpiry(this);
 	}
@@ -185,6 +217,10 @@ public class Url {
 						"Expiry inactivity duration days must be provided for INACTIVITY expiry type");
 			this.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
 		}
+	}
+
+	public boolean verifyUserOwnership(long userId) {
+		return user != null && userId == user.getId();
 	}
 
 }

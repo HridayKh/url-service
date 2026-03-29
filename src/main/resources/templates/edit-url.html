@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: main-layout(
+			~{::short-url-header},
+			~{::short-url-main},
+			~{::short-url-footer}
+		)}">
+
+<!--Buttons on Nav-->
+<th:block th:fragment="short-url-header">
+	<li><a href="/" role="button">Back</a></li>
+	<li><a href="/oauth/logout">Logout</a></li>
+	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
+</th:block>
+
+<!--Main content-->
+<th:block th:fragment="short-url-main">
+	<section>
+		<h1>
+			Generate Short URL
+		</h1>
+		<th:block th:if="${error}">
+			<p th:text="${error}" style="color: red;">
+				<strong>Error:</strong> <span th:text="${error}">Something went wrong.</span>
+			</p>
+		</th:block>
+	</section>
+	<section id="shorten-url-input">
+		<form hx-post="/urls/new">
+
+			<div role="group">
+				<input id="originalUrl" type="url" name="originalUrl" placeholder="Enter Link"
+					required />
+
+				<select id="domain" name="domain" required>
+					<option selected disabled value="">Select Domain</option>
+					<option th:each="domain : ${domainsList}" th:value="${domain}"
+						th:text="${domain}">
+						PLACEHOLDER
+					</option>
+				</select>
+			</div>
+
+			<fieldset>
+				<label>
+					<input type="checkbox" name="toggleCustomUrl" id="toggleCustomUrl"> Use Custom
+					Url?
+				</label>
+				<div id="customUrlContainer" style="display: none; margin-top: 10px;">
+					<input id="customUrl" type="text" name="customUrl"
+						placeholder="Enter custom URL" />
+				</div>
+			</fieldset>
+
+			<fieldset>
+				<label>
+					<input type="checkbox" name="togglePassword" id="togglePassword"> Use Password
+					Protection?
+				</label>
+				<div id="passwordContainer" style="display: none; margin-top: 10px;">
+					<input id="password" type="password" name="password"
+						placeholder="Enter password" />
+				</div>
+			</fieldset>
+
+			<hr>
+
+			<label for="expiryType">Expiry Type *</label>
+			<select id="expiryType" name="expiryType" required>
+				<option value="NONE" selected>No Expiry</option>
+				<option value="TIME">At Specific Time</option>
+				<option value="USAGE">Based on Click Count</option>
+				<option value="INACTIVITY">Based on Inactivity</option>
+			</select>
+
+			<div id="expiry-TIME" class="expiry-group" style="display: none;">
+				<label for="expiryTime">Expiry Date & Time</label>
+				<input id="expiryTime" type="datetime-local" name="expiryTime" />
+			</div>
+
+			<div id="expiry-USAGE" class="expiry-group" style="display: none;">
+				<label for="expiryMaxClicks">Max Clicks</label>
+				<input id="expiryMaxClicks" type="number" min="1" name="expiryMaxClicks"
+					placeholder="eg: 100" />
+			</div>
+
+			<div id="expiry-INACTIVITY" class="expiry-group" style="display: none;">
+				<label for="expiryInactivityDurationDays">Inactivity Duration (days)</label>
+				<input id="expiryInactivityDurationDays" type="number" min="1"
+					name="expiryInactivityDurationDays" placeholder="eg: 31536000" />
+			</div>
+
+			<input type="submit" value="Create URL" style="margin-top: 20px;" />
+		</form>
+
+		<script>
+			// 1. Password Toggle Logic
+			const passCheckbox = document.getElementById('togglePassword');
+			const passContainer = document.getElementById('passwordContainer');
+
+			passCheckbox.addEventListener('change', function () {
+				passContainer.style.display = this.checked ? 'block' : 'none';
+				if (!this.checked) document.getElementById('password').value = '';
+			});
+
+			// 2. Custom URL Toggle Logic
+			const customUrlCheckBox = document.getElementById('toggleCustomUrl');
+			const customUrlContainer = document.getElementById('customUrlContainer');
+
+			customUrlCheckBox.addEventListener('change', function () {
+				customUrlContainer.style.display = this.checked ? 'block' : 'none';
+				if (!this.checked) document.getElementById('customUrl').value = '';
+			});
+
+			// 3. Expiry Type Logic
+			const expirySelect = document.getElementById('expiryType');
+			const expiryGroups = document.querySelectorAll('.expiry-group');
+
+			expirySelect.addEventListener('change', function () {
+				// Hide all groups first
+				expiryGroups.forEach(group => group.style.display = 'none');
+
+				// Show the one that matches the value (if it exists)
+				const targetId = 'expiry-' + this.value;
+				const targetGroup = document.getElementById(targetId);
+				if (targetGroup) {
+					targetGroup.style.display = 'block';
+				}
+			});
+		</script>
+	</section>
+</th:block>
+
+<!--Footer Content-->
+<th:block th:fragment="short-url-footer">
+</th:block>
+
+</html>

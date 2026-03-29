@@ -7,9 +7,8 @@
 
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
-	<li><a href="/new" role="button">New +</a></li>
+	<li><a href="/" role="button">Back</a></li>
 	<li><a href="/oauth/logout">Logout</a></li>
-	<li><a href="/deleted-urls">Deleted URLs</a></li>
 	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
 </th:block>
 
@@ -22,15 +21,14 @@
 				<a th:href="${fullLink}" th:text="${displayUrl}">urls.hridaykh.in/placeholder</a>
 			</ins>
 		</th:block>
-
+		<p>Deleted URLs will not be restore-able after 30 days of deletion!</p>
 		<figure>
 			<table>
 				<thead>
 					<tr>
 						<th scope="col">Short URL</th>
 						<th scope="col">Orignal URL</th>
-						<th scope="col">Stats</th>
-						<th scope="col" style="text-align: right;"></th>
+						<th scope="col">Deleted At</th>
 						<th scope="col" style="text-align: right;"></th>
 					</tr>
 				</thead>
@@ -45,25 +43,14 @@
 								target="_blank"></a>
 						</td>
 						<td>
-							<small style="color: var(--pico-muted-color);">
-								<span th:text="${url.clickCount}">0</span> clicks
-								•
-								Last visited: <span
-									th:text="${url.lastClicked}">Today</span>
-							</small>
+							<small th:text="${url.deletedAt}"></small>
 						</td>
 						<td style="text-align: right;">
-							<a href="" th:href="@{/edit/{id}(id=${url.id})}"
-								style="text-decoration: none;">
-								Edit
-							</a>
-						</td>
-						<td style="text-align: right;">
-							<a href="" th:attr="hx-post=@{/delete/{id}(id=${url.id})}"
-								hx-confirm="Are you sure you want to delete this link?"
+							<a href="" th:attr="hx-post=@{/restore/{id}(id=${url.id})}"
+								hx-confirm="Are you sure you want to restore this link?"
 								hx-target="closest tr" hx-swap="outerHTML"
 								style="text-decoration: none;">
-								Delete
+								Restore
 							</a>
 						</td>
 					</tr>

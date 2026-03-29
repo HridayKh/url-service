@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import in.hridaykh.url_service.config.ViewRegistry;
-import in.hridaykh.url_service.exception.ExpiredUrlException;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
 import in.hridaykh.url_service.exception.SessionExpiredException;
@@ -18,12 +17,6 @@ public class ExceptionFilter {
 	public String handleInvalidUrlException(InvalidUrlException ex, Model model) {
 		model.addAttribute("errorMessage", ex.getMessage());
 		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
-	}
-
-	@ExceptionHandler(ExpiredUrlException.class)
-	public String handleExpiredUrlException(ExpiredUrlException ex, Model model) {
-		model.addAttribute("errorMessage", ex.getMessage());
-		return ViewRegistry.error;
 	}
 
 	@ExceptionHandler(NotFoundUrlException.class)

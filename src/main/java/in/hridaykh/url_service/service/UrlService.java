@@ -1,14 +1,16 @@
 package in.hridaykh.url_service.service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
+import in.hridaykh.url_service.dtos.DeletedUrlsList;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.dtos.UrlsList;
-import in.hridaykh.url_service.exception.ExpiredUrlException;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
 import in.hridaykh.url_service.exception.ShortCodeCollisionException;
@@ -109,7 +111,7 @@ public class UrlService {
 		if (url.isExpired(LocalDateTime.now())) {
 			url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
 			urlRepository.save(url);
-			throw new ExpiredUrlException(shortUrlCode);
+			throw new NotFoundUrlException(shortUrlCode);
 		}
 
 		url.incrementClicksCount(LocalDateTime.now());
@@ -132,9 +134,67 @@ public class UrlService {
 		if (jwt == null)
 			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
 
-		List<UrlsList> urls = urlRepository.findAllUrlsByUserId(jwt.sub());
+		List<Url> urls = urlRepository.findByUser_IdAndIsActiveTrue(jwt.sub());
 
-		return urls.toArray(new UrlsList[0]);
+		List<UrlsList> urlsList = new ArrayList<>();
+
+		for (Url url : urls) {
+			if (url.isExpired(LocalDateTime.now())) {
+				url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
+				urlRepository.save(url);
+				continue;
+			}
+			urlsList.add(url.toUrlList("urls.hridaykh.in/"));
+		}
+
+		return urlsList.toArray(new UrlsList[0]);
+	}
+
+	@Transactional
+	public boolean deleteUrl(UserJwtPayload jwt, Long urlId) {
+		if (jwt == null)
+			throw new IllegalArgumentException("User JWT payload cannot be null when deleting a URL");
+
+		Url url = urlRepository.findById(urlId).orElse(null);
+
+		if (url == null || !url.verifyUserOwnership(jwt.sub()))
+			return false;
+
+		url.markAsDeleted(LocalDateTime.now(), DeleteReason.USER_REQUEST);
+		urlRepository.save(url);
+
+		return true;
+	}
+
+	@Transactional
+	public DeletedUrlsList[] getDeletedUrls(UserJwtPayload jwt) {
+		if (jwt == null)
+			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+
+		List<Url> urls = urlRepository.findByUser_IdAndIsDeletedTrue(jwt.sub());
+
+		List<DeletedUrlsList> urlsList = new ArrayList<>();
+
+		for (Url url : urls)
+			urlsList.add(url.toDeletedUrlList("urls.hridaykh.in/"));
+
+		return urlsList.toArray(new DeletedUrlsList[0]);
+	}
+
+	@Transactional
+	public boolean restoreUrl(UserJwtPayload jwt, Long urlId) {
+		if (jwt == null)
+			throw new IllegalArgumentException("User JWT payload cannot be null when restoring a URL");
+
+		Url url = urlRepository.findById(urlId).orElse(null);
+
+		if (url == null || !url.verifyUserOwnership(jwt.sub()))
+			return false;
+
+		url.markAsRestored(LocalDateTime.now());
+		urlRepository.save(url);
+
+		return true;
 	}
 
 }

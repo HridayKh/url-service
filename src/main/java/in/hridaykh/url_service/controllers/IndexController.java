@@ -15,7 +15,6 @@ import org.springframework.web.util.UriUtils;
 import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
-import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.service.UrlService;
@@ -32,10 +31,10 @@ public class IndexController {
 	}
 
 	@GetMapping("/")
-	public String index(@RequestParam(name = "scs", required = false) String scs,
-			@RequestParam(name = "du", required = false) String du,
-			@RequestParam(name = "fl", required = false) String fl,
-			Model model, @RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt) {
+	public String index(@RequestParam(required = false) String scs,
+			@RequestParam(required = false) String du,
+			@RequestParam(required = false) String fl,
+			Model model, @RequestAttribute(required = false) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 
 		System.out.println("\n\n\tINDEX CONTROLLER\nChecking jwt in index controller");
@@ -61,16 +60,13 @@ public class IndexController {
 		return ViewRegistry.index;
 	}
 
-	@PostMapping("/urls/new-anon")
-	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
-		ShortenUrlResponseDTO result = urlService.createAnonShortUrl(domain, originalUrl);
-		System.out.println("Generated short URL code: " + result.displayUrl());
-		model.addAttribute("result", result);
-		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
+	@GetMapping("/{shortUrlCode}")
+	public String getUrl(@PathVariable String shortUrlCode) {
+		return "redirect:" + urlService.getOriginalUrl(shortUrlCode);
 	}
 
 	@GetMapping("/new")
-	public String createUrlPage(Model model, @RequestAttribute(name = "jwt", required = true) UserJwtPayload jwt) {
+	public String createUrlPage(Model model, @RequestAttribute(required = true) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 		if (jwt == null) {
 			System.out.println("JWT NULL!!!");
@@ -84,7 +80,7 @@ public class IndexController {
 	}
 
 	@PostMapping("/urls/new")
-	public String newUrl(@RequestAttribute(name = "jwt", required = false) UserJwtPayload jwt,
+	public String newUrl(@RequestAttribute(required = false) UserJwtPayload jwt,
 			@RequestParam String originalUrl,
 			@RequestParam String domain,
 			@RequestParam(required = false, defaultValue = "false") boolean toggleCustomUrl,
@@ -122,9 +118,99 @@ public class IndexController {
 		return ViewRegistry.emptyPage;
 	}
 
-	@GetMapping("/{shortUrlCode}")
-	public String getUrl(@PathVariable String shortUrlCode) {
-		return "redirect:" + urlService.getOriginalUrl(shortUrlCode);
+	@PostMapping("/urls/new-anon")
+	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
+		ShortenUrlResponseDTO result = urlService.createAnonShortUrl(domain, originalUrl);
+		System.out.println("Generated short URL code: " + result.displayUrl());
+		model.addAttribute("result", result);
+		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
+	}
+
+	@PostMapping("/delete/{urlId}")
+	public String deleteUrl(@RequestAttribute(required = false) UserJwtPayload jwt,
+			@PathVariable Long urlId, Model model, HttpServletResponse response) {
+
+		boolean urlDeleted = urlService.deleteUrl(jwt, urlId);
+
+		if (urlDeleted)
+			return ViewRegistry.Fragments.DeletedUrlResult.deleteSuccess;
+
+		response.setHeader("HX-Retarget", "closest td");
+		return ViewRegistry.Fragments.DeletedUrlResult.deleteError;
+	}
+
+	@GetMapping("/deleted-urls")
+	public String deletedUrls(Model model, @RequestAttribute UserJwtPayload jwt) {
+		model.addAttribute("userPfp", jwt.pfp());
+		model.addAttribute("userId", jwt.sub());
+		model.addAttribute("urls", urlService.getDeletedUrls(jwt));
+		return ViewRegistry.deletedUrls;
+	}
+
+	@PostMapping("/restore/{urlId}")
+	public String restoreUrl(@RequestAttribute(required = false) UserJwtPayload jwt,
+			@PathVariable Long urlId, Model model, HttpServletResponse response) {
+
+		boolean urlRestored = urlService.restoreUrl(jwt, urlId);
+
+		if (urlRestored)
+			return ViewRegistry.Fragments.RestoredUrlResult.restoreSuccess;
+
+		response.setHeader("HX-Retarget", "closest td");
+		return ViewRegistry.Fragments.RestoredUrlResult.restoreError;
+	}
+
+	@GetMapping("/edit/{urlId}")
+	public String editPage(Model model, @RequestAttribute(required = true) UserJwtPayload jwt,
+			@PathVariable Long urlId) {
+		model.addAttribute("domainsList", domainsList.list().split(","));
+		if (jwt == null) {
+			System.out.println("JWT NULL!!!");
+			return "redirect:/";
+		}
+
+		model.addAttribute("userPfp", jwt.pfp());
+		model.addAttribute("userId", jwt.sub());
+
+		return ViewRegistry.editUrl;
+	}
+
+	@PostMapping("/urls/edit")
+	public String editUrl(@RequestAttribute(required = false) UserJwtPayload jwt,
+			@RequestParam String originalUrl,
+			@RequestParam String domain,
+			@RequestParam(required = false, defaultValue = "false") boolean toggleCustomUrl,
+			@RequestParam(required = false) String customUrl,
+			@RequestParam(required = false, defaultValue = "false") boolean togglePassword,
+			@RequestParam(required = false) String password,
+			@RequestParam ExpiryType expiryType,
+			@RequestParam(required = false) LocalDateTime expiryTime,
+			@RequestParam(required = false) Integer expiryMaxClicks,
+			@RequestParam(required = false) Long expiryInactivityDurationDays,
+			Model model, HttpServletResponse response) {
+
+		boolean validDomain = false;
+		for (String d : domainsList.list().split(",")) {
+			if (d.equals(domain)) {
+				validDomain = true;
+				break;
+			}
+		}
+		if (!validDomain) {
+			System.out.println("Invalid domain selected: " + domain);
+			model.addAttribute("error", "Invalid domain selected");
+			return createUrlPage(model, jwt);
+		}
+
+		ShortenUrlResponseDTO result = urlService.createUserUrl(jwt, domain, originalUrl, toggleCustomUrl,
+				customUrl, togglePassword, password, expiryType, expiryTime, expiryMaxClicks,
+				expiryInactivityDurationDays);
+		System.out.println("Generated short URL code: " + result.displayUrl());
+		String encodedDu = UriUtils.encode(result.displayUrl(), StandardCharsets.UTF_8);
+		String encodedFl = UriUtils.encode(result.fullLink(), StandardCharsets.UTF_8);
+
+		response.setHeader("HX-Redirect", "/?scs=1&du=" + encodedDu + "&fl=" + encodedFl);
+		return ViewRegistry.emptyPage;
 	}
 
 }

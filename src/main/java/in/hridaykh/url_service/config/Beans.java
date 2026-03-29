@@ -4,6 +4,7 @@ import org.springframework.aot.hint.annotation.RegisterReflectionForBinding;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.client.RestClient;
 
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
@@ -32,7 +33,7 @@ public class Beans {
 			ObjectMapper objectMapper, UserSessionRepository userSessionsRepository,
 			JwtService jwtService) {
 		JwtFilter filter = new JwtFilter(oauthConfig, oauthUtils, objectMapper, userSessionsRepository,
-				jwtService);
+				jwtService, new AntPathMatcher());
 		FilterRegistrationBean<JwtFilter> registration = new FilterRegistrationBean<>();
 		registration.setFilter(filter);
 		registration.addUrlPatterns("/*");
