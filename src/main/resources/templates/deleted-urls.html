@@ -28,6 +28,7 @@
 					<tr>
 						<th scope="col">Short URL</th>
 						<th scope="col">Orignal URL</th>
+						<th scope="col">Delete Reason</th>
 						<th scope="col">Deleted At</th>
 						<th scope="col" style="text-align: right;"></th>
 					</tr>
@@ -41,6 +42,9 @@
 						<td>
 							<a th:href="${url.orignalUrl}" th:text="${url.orignalUrl}"
 								target="_blank"></a>
+						</td>
+						<td>
+							<small th:text="${url.deleteReason}"></small>
 						</td>
 						<td>
 							<small th:text="${url.deletedAt}"></small>

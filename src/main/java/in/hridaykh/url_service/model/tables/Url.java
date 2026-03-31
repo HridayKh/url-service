@@ -158,8 +158,9 @@ public class Url {
 		String displayUrl = domain + this.shortUrl;
 		String fullLink = "https://" + domain + this.shortUrl;
 		String originalUrl = this.originalUrl;
+		String deleteReason = this.deleteReason != null ? this.deleteReason.name() : "Unknown";
 		String deletedAt = this.deletedAt != null ? String.valueOf(this.deletedAt) : "Unknown";
-		return new DeletedUrlsList(id, displayUrl, fullLink, originalUrl, deletedAt);
+		return new DeletedUrlsList(id, displayUrl, fullLink, originalUrl, deleteReason, deletedAt);
 	}
 
 	public void markAsRestored(LocalDateTime now) {
@@ -171,6 +172,10 @@ public class Url {
 		this.expiryTime = null;
 		this.expiryMaxClicks = null;
 		this.expiryInactivityDurationSeconds = null;
+	}
+
+	public boolean verifyUserOwnership(long userId) {
+		return user != null && userId == user.getId();
 	}
 
 	public UrlExpiry UrlExpiry() {
@@ -217,10 +222,6 @@ public class Url {
 						"Expiry inactivity duration days must be provided for INACTIVITY expiry type");
 			this.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
 		}
-	}
-
-	public boolean verifyUserOwnership(long userId) {
-		return user != null && userId == user.getId();
 	}
 
 }

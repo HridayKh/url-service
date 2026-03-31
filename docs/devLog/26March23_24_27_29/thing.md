@@ -5,6 +5,7 @@
 - edit urls
 - password urls
 - user profile mgmt
+- like a bajillion or so custom exceptions
 
 ## done today
 
