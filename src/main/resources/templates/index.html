@@ -8,9 +8,8 @@
 <!--Buttons on Nav-->
 <th:block th:fragment="short-url-header">
 	<li><a href="/new" role="button">New +</a></li>
-	<li><a href="/oauth/logout">Logout</a></li>
 	<li><a href="/deleted-urls">Deleted URLs</a></li>
-	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
+	<li><a href="/account"><img th:src="${userPfp}" width="50px" loading="lazy" /></a></li>
 </th:block>
 
 <!--Main content-->

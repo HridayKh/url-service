@@ -3,11 +3,10 @@
 ## todo
 
 - password urls
-- user profile mgmt
-- like a bajillion or so custom exceptions
 
 ## done today
 
+- user profile mgmt
 - edit urls
 - list urls made by user
 - delete urls

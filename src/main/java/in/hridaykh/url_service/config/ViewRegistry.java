@@ -12,6 +12,7 @@ public final class ViewRegistry {
 	public static final String emptyPage = "empty-page";
 	public static final String deletedUrls = "deleted-urls";
 	public static final String editUrl = "edit-url";
+	public static final String account = "account";
 
 	public static final class Fragments {
 		private Fragments() {

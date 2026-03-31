@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html th:replace="~{fragments/layout :: main-layout(
+			~{::short-url-header},
+			~{::short-url-main},
+			~{::short-url-footer}
+		)}">
+
+<!--Buttons on Nav-->
+<th:block th:fragment="short-url-header">
+	<li><a href="/" role="button">Back</a></li>
+	<li><img th:src="${userPfp}" width="50px" loading="lazy" /></li>
+</th:block>
+
+<!--Main content-->
+<th:block th:fragment="short-url-main">
+	<section id="logout">
+
+		<a role="button" href="/oauth/logout">Logout</a>
+	</section>
+</th:block>
+
+<!--Footer Content-->
+<th:block th:fragment="short-url-footer">
+</th:block>
+
+</html>

@@ -83,4 +83,17 @@ public class OauthController {
 		return "redirect:/";
 	}
 
+	@GetMapping("/account")
+	public String account(Model model, @RequestAttribute UserJwtPayload jwt) {
+		if (jwt == null) {
+			System.out.println("JWT NULL!!!");
+			return ViewRegistry.indexAnon;
+		}
+
+		model.addAttribute("userPfp", jwt.pfp());
+		model.addAttribute("userId", jwt.sub());
+
+		return ViewRegistry.account;
+	}
+
 }
