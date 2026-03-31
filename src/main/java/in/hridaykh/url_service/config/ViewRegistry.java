@@ -19,6 +19,7 @@ public final class ViewRegistry {
 
 		public static final String layout = "fragments/layout";
 		public static final String oauthList = "fragments/oauth-list";
+		public static final String editUrlError = "fragments/edit-url-error";
 
 		public static final class DeletedUrlResult {
 			private DeletedUrlResult() {

@@ -1,5 +1,18 @@
 package in.hridaykh.url_service.model.tables;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.Map;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+import in.hridaykh.url_service.dtos.DeletedUrlsList;
+import in.hridaykh.url_service.dtos.UrlEditDTO;
+import in.hridaykh.url_service.dtos.UrlsList;
+import in.hridaykh.url_service.model.enums.DeleteReason;
+import in.hridaykh.url_service.model.enums.ExpiryType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -12,18 +25,6 @@ import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
-import in.hridaykh.url_service.dtos.DeletedUrlsList;
-import in.hridaykh.url_service.dtos.UrlsList;
-import in.hridaykh.url_service.model.enums.DeleteReason;
-import in.hridaykh.url_service.model.enums.ExpiryType;
-
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Map;
 
 @Entity
 @Table(name = "urls", indexes = {
@@ -191,6 +192,9 @@ public class Url {
 
 		public void none() {
 			URL.expiryType = ExpiryType.NONE;
+			URL.expiryTime = null;
+			URL.expiryMaxClicks = null;
+			URL.expiryInactivityDurationSeconds = null;
 		}
 
 		public void time(LocalDateTime expiryTime) {
@@ -198,6 +202,8 @@ public class Url {
 				throw new IllegalArgumentException("Expiry time must be provided for TIME expiry type");
 			URL.expiryType = ExpiryType.TIME;
 			URL.expiryTime = expiryTime;
+			URL.expiryMaxClicks = null;
+			URL.expiryInactivityDurationSeconds = null;
 		}
 
 		public void usage(Integer expiryMaxClicks) {
@@ -206,22 +212,51 @@ public class Url {
 						"Expiry max clicks must be provided for USAGE expiry type");
 			URL.expiryType = ExpiryType.USAGE;
 			URL.expiryMaxClicks = expiryMaxClicks;
+			URL.expiryTime = null;
+			URL.expiryInactivityDurationSeconds = null;
 		}
 
-		public void inactivity(Long expiryInactivityDurationSeconds) {
+		public void inactivitySeconds(Long expiryInactivityDurationSeconds) {
 			if (expiryInactivityDurationSeconds == null)
 				throw new IllegalArgumentException(
 						"Expiry inactivity duration must be provided for INACTIVITY expiry type");
 			URL.expiryType = ExpiryType.INACTIVITY;
 			URL.expiryInactivityDurationSeconds = expiryInactivityDurationSeconds;
+			URL.expiryTime = null;
+			URL.expiryMaxClicks = null;
 		}
 
 		public void inactivityDays(Long expiryInactivityDurationDays) {
 			if (expiryInactivityDurationDays == null)
 				throw new IllegalArgumentException(
 						"Expiry inactivity duration days must be provided for INACTIVITY expiry type");
-			this.inactivity(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
+			this.inactivitySeconds(Duration.ofDays(expiryInactivityDurationDays).getSeconds());
 		}
+	}
+
+	public UrlEditDTO toUrlEditDTO() {
+		Long id = this.id;
+		String originalUrl = this.originalUrl;
+		String shortUrl = this.shortUrl;
+		boolean hasPassword = this.passwordHash != null;
+		String expiryType = this.expiryType != null ? this.expiryType.name() : ExpiryType.NONE.name();
+		String expiryTime = this.expiryTime != null ? String.valueOf(this.expiryTime) : null;
+		Integer expiryMaxClicks = this.expiryTime != null ? this.expiryMaxClicks : null;
+
+		Long expiryInactivityDurationDays = this.expiryInactivityDurationSeconds != null
+				? Duration.ofSeconds(this.expiryInactivityDurationSeconds).toDays()
+				: null;
+
+		return new UrlEditDTO(id, originalUrl, shortUrl, hasPassword, expiryType, expiryTime, expiryMaxClicks,
+				expiryInactivityDurationDays);
+	}
+
+	public void getAndUpdate(User user, Long id, String originalUrl, String shortUrl, String passHash) {
+		this.user = user;
+		this.id = id;
+		this.originalUrl = originalUrl;
+		this.shortUrl = shortUrl;
+		this.passwordHash = passHash;
 	}
 
 }

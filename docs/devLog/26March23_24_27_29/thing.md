@@ -2,13 +2,13 @@
 
 ## todo
 
-- edit urls
 - password urls
 - user profile mgmt
 - like a bajillion or so custom exceptions
 
 ## done today
 
+- edit urls
 - list urls made by user
 - delete urls
 - refactor index and index-anon

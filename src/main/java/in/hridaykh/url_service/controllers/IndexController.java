@@ -14,9 +14,11 @@ import org.springframework.web.util.UriUtils;
 
 import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
+import in.hridaykh.url_service.dtos.EditUrlResponseDTO;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
+import in.hridaykh.url_service.model.tables.Url;
 import in.hridaykh.url_service.service.UrlService;
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -48,14 +50,24 @@ public class IndexController {
 
 		System.out.println("JWT FOUND!!!");
 
+		model.addAttribute("urls", urlService.getUserUrls(jwt));
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
 
-		model.addAttribute("isSuccess", "1".equals(scs));
+		if (scs == null || du == null || fl == null) {
+			model.addAttribute("isSuccess", false);
+			return ViewRegistry.index;
+		}
+
+		model.addAttribute("isSuccess", true);
+		switch (scs) {
+			case "1" -> model.addAttribute("scsMsg", "Url Created Successfully: "); // new url created
+			case "2" -> model.addAttribute("scsMsg", "Url Edited Successfully: "); // url edited
+			default ->
+				model.addAttribute("isSuccess", false);
+		}
 		model.addAttribute("displayUrl", du);
 		model.addAttribute("fullLink", fl);
-
-		model.addAttribute("urls", urlService.getUserUrls(jwt));
 
 		return ViewRegistry.index;
 	}
@@ -164,52 +176,43 @@ public class IndexController {
 	public String editPage(Model model, @RequestAttribute(required = true) UserJwtPayload jwt,
 			@PathVariable Long urlId) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
-		if (jwt == null) {
-			System.out.println("JWT NULL!!!");
+		if (jwt == null)
 			return "redirect:/";
-		}
+
+		Url url = urlService.getUrlById(urlId);
+		if (url == null || !url.verifyUserOwnership(jwt.sub()))
+			return "redirect:/";
+		model.addAttribute("url", url.toUrlEditDTO());
 
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
-
 		return ViewRegistry.editUrl;
 	}
 
 	@PostMapping("/urls/edit")
 	public String editUrl(@RequestAttribute(required = false) UserJwtPayload jwt,
+			@RequestParam Long id,
 			@RequestParam String originalUrl,
-			@RequestParam String domain,
-			@RequestParam(required = false, defaultValue = "false") boolean toggleCustomUrl,
-			@RequestParam(required = false) String customUrl,
-			@RequestParam(required = false, defaultValue = "false") boolean togglePassword,
+			@RequestParam String shortUrl,
+			@RequestParam(defaultValue = "false") boolean hasPassword,
 			@RequestParam(required = false) String password,
 			@RequestParam ExpiryType expiryType,
 			@RequestParam(required = false) LocalDateTime expiryTime,
 			@RequestParam(required = false) Integer expiryMaxClicks,
 			@RequestParam(required = false) Long expiryInactivityDurationDays,
 			Model model, HttpServletResponse response) {
+		System.out.println();
+		EditUrlResponseDTO result = urlService.editUrl(jwt, id, originalUrl, shortUrl, hasPassword, password,
+				expiryType, expiryTime, expiryMaxClicks, expiryInactivityDurationDays);
 
-		boolean validDomain = false;
-		for (String d : domainsList.list().split(",")) {
-			if (d.equals(domain)) {
-				validDomain = true;
-				break;
-			}
-		}
-		if (!validDomain) {
-			System.out.println("Invalid domain selected: " + domain);
-			model.addAttribute("error", "Invalid domain selected");
-			return createUrlPage(model, jwt);
+		if (!result.isSuccess()) {
+			model.addAttribute("error", result.error());
+			return ViewRegistry.Fragments.editUrlError;
 		}
 
-		ShortenUrlResponseDTO result = urlService.createUserUrl(jwt, domain, originalUrl, toggleCustomUrl,
-				customUrl, togglePassword, password, expiryType, expiryTime, expiryMaxClicks,
-				expiryInactivityDurationDays);
-		System.out.println("Generated short URL code: " + result.displayUrl());
 		String encodedDu = UriUtils.encode(result.displayUrl(), StandardCharsets.UTF_8);
 		String encodedFl = UriUtils.encode(result.fullLink(), StandardCharsets.UTF_8);
-
-		response.setHeader("HX-Redirect", "/?scs=1&du=" + encodedDu + "&fl=" + encodedFl);
+		response.setHeader("HX-Redirect", "/?scs=2&du=" + encodedDu + "&fl=" + encodedFl);
 		return ViewRegistry.emptyPage;
 	}
 

@@ -18,7 +18,7 @@
 	<section id="urls-list">
 		<th:block th:if="${isSuccess}">
 			<ins style="display: block; margin-bottom: 1rem;">
-				<strong>URL shortened!</strong> Your short URL is:
+				<strong th:text="${scsMsg}"></strong>
 				<a th:href="${fullLink}" th:text="${displayUrl}">urls.hridaykh.in/placeholder</a>
 			</ins>
 		</th:block>

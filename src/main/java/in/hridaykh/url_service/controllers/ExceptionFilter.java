@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
+import in.hridaykh.url_service.exception.NotLoggedInException;
 import in.hridaykh.url_service.exception.SessionExpiredException;
 import in.hridaykh.url_service.exception.StateGenerationException;
 
@@ -36,5 +37,9 @@ public class ExceptionFilter {
 	public String handleSessionExpiredException(SessionExpiredException ex, Model model) {
 		model.addAttribute("errorMessage", ex.getMessage());
 		return ViewRegistry.error;
+	}
+	@ExceptionHandler(NotLoggedInException.class)
+	public String handleNotLoggedInException(NotLoggedInException ex, Model model) {
+		return "redirect:/";
 	}
 }

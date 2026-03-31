@@ -1,18 +1,22 @@
 package in.hridaykh.url_service.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.cglib.core.Local;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.dtos.DeletedUrlsList;
+import in.hridaykh.url_service.dtos.EditUrlResponseDTO;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
+import in.hridaykh.url_service.exception.NotLoggedInException;
 import in.hridaykh.url_service.exception.ShortCodeCollisionException;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
@@ -63,7 +67,7 @@ public class UrlService {
 			Long expiryInactivityDurationDays) {
 
 		if (jwt == null)
-			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+			throw new NotLoggedInException();
 
 		if (!UrlUtils.isValidUrl(originalUrl))
 			throw new InvalidUrlException(originalUrl);
@@ -132,7 +136,7 @@ public class UrlService {
 	@Transactional
 	public UrlsList[] getUserUrls(UserJwtPayload jwt) {
 		if (jwt == null)
-			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+			throw new NotLoggedInException();
 
 		List<Url> urls = urlRepository.findByUser_IdAndIsActiveTrue(jwt.sub());
 
@@ -153,7 +157,7 @@ public class UrlService {
 	@Transactional
 	public boolean deleteUrl(UserJwtPayload jwt, Long urlId) {
 		if (jwt == null)
-			throw new IllegalArgumentException("User JWT payload cannot be null when deleting a URL");
+			throw new NotLoggedInException();
 
 		Url url = urlRepository.findById(urlId).orElse(null);
 
@@ -169,7 +173,7 @@ public class UrlService {
 	@Transactional
 	public DeletedUrlsList[] getDeletedUrls(UserJwtPayload jwt) {
 		if (jwt == null)
-			throw new IllegalArgumentException("User JWT payload cannot be null when creating a user URL");
+			throw new NotLoggedInException();
 
 		List<Url> urls = urlRepository.findByUser_IdAndIsDeletedTrue(jwt.sub());
 
@@ -184,7 +188,7 @@ public class UrlService {
 	@Transactional
 	public boolean restoreUrl(UserJwtPayload jwt, Long urlId) {
 		if (jwt == null)
-			throw new IllegalArgumentException("User JWT payload cannot be null when restoring a URL");
+			throw new NotLoggedInException();
 
 		Url url = urlRepository.findById(urlId).orElse(null);
 
@@ -195,6 +199,71 @@ public class UrlService {
 		urlRepository.save(url);
 
 		return true;
+	}
+
+	public Url getUrlById(Long urlId) {
+		return urlRepository.findById(urlId).orElse(null);
+	}
+
+	@Transactional
+	public EditUrlResponseDTO editUrl(UserJwtPayload jwt, Long id, String originalUrl, String shortUrl,
+			boolean hasPassword, String password, ExpiryType expiryType, LocalDateTime expiryTime,
+			Integer expiryMaxClicks, Long expiryInactivityDurationDays) {
+
+		if (jwt == null)
+			throw new NotLoggedInException();
+
+		if (!UrlUtils.isValidUrl(originalUrl))
+			return new EditUrlResponseDTO(null, null, false, "Invalid original URL.");
+
+		if (shortUrl == null || shortUrl.isBlank())
+			shortUrl = UrlUtils.generateUniqueCode();
+
+		if (hasPassword && (password == null || password.isBlank()))
+			return new EditUrlResponseDTO(null, null, false,
+					"Password cannot be empty is selected 'USe Password'.");
+
+		String passHash = hasPassword ? oauthUtils.signHmacSHA256(password) : null;
+
+		Url url = urlRepository.findById(id).orElse(null);
+		if (url == null)
+			return new EditUrlResponseDTO(null, null, false, "URL not found.");
+
+		url.getAndUpdate(userRepository.getReferenceById(jwt.sub()), id, originalUrl, shortUrl, passHash);
+		switch (expiryType) {
+			case NONE -> url.UrlExpiry().none();
+			case TIME -> {
+				if (expiryTime == null)
+					return new EditUrlResponseDTO(null, null, false,
+							"Expiry time must be provided when 'Expire by Time' is selected.");
+				if (expiryTime.isBefore(LocalDateTime.now()))
+					return new EditUrlResponseDTO(null, null, false,
+							"Expiry time is set to before now.");
+				url.UrlExpiry().time(expiryTime);
+			}
+			case USAGE -> {
+				if (expiryMaxClicks == null)
+					return new EditUrlResponseDTO(null, null, false,
+							"Expiry max clicks must be provided when 'Expire by Usage' is selected.");
+				url.UrlExpiry().usage(expiryMaxClicks);
+			}
+			case INACTIVITY -> {
+				if (expiryInactivityDurationDays == null)
+					return new EditUrlResponseDTO(null, null, false,
+							"Expiry inactivity duration days must be provided when 'Expire by Inactivity' is selected.");
+				url.UrlExpiry().inactivityDays(expiryInactivityDurationDays);
+			}
+		}
+		try {
+			urlRepository.saveAndFlush(url);
+		} catch (DataIntegrityViolationException e) {
+			return new EditUrlResponseDTO(null, null, false,
+					"The custom code '" + shortUrl + "' is already taken.");
+		}
+
+		return new EditUrlResponseDTO("urls.HridayKh.in/" + shortUrl, "https://urls.HridayKh.in/" + shortUrl,
+				true,
+				null);
 	}
 
 }
