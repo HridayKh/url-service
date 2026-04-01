@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import in.hridaykh.url_service.model.tables.Url;
@@ -21,6 +22,11 @@ public interface ShortUrlRepository extends JpaRepository<Url, Long> {
 	boolean existsByShortUrl(String shortUrl);
 
 	List<Url> findByUser_IdAndIsDeletedTrue(long userId);
+
+	@Modifying
+	@Transactional
+	@Query("UPDATE Url u SET u.clickCount = u.clickCount + :clickCount WHERE u.shortUrl = :shortUrl")
+	void incrementClicksByCode(@Param("shortUrl") String shortUrl, @Param("clickCount") int clickCount);
 
 	@Modifying
 	@Transactional

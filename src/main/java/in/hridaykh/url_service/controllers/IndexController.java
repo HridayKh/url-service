@@ -20,6 +20,7 @@ import in.hridaykh.url_service.dtos.UrlRedirDTO;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.Url;
+import in.hridaykh.url_service.service.CacheService;
 import in.hridaykh.url_service.service.UrlService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -28,10 +29,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class IndexController {
 	private final DomainsList domainsList;
 	private final UrlService urlService;
+	private final CacheService cacheService;
 
-	public IndexController(DomainsList domainsList, UrlService urlService) {
+	public IndexController(DomainsList domainsList, UrlService urlService, CacheService cacheService) {
 		this.domainsList = domainsList;
 		this.urlService = urlService;
+		this.cacheService = cacheService;
 	}
 
 	@GetMapping("/")
@@ -41,18 +44,16 @@ public class IndexController {
 			Model model, @RequestAttribute(required = false) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 
-		System.out.println("\n\n\tINDEX CONTROLLER\nChecking jwt in index controller");
-
 		if (jwt == null) {
 
-			System.out.println("JWT NULL!!!");
+			// System.out.println("JWT NULL!!!");
 
 			return ViewRegistry.indexAnon;
 		}
 
-		System.out.println("JWT FOUND!!!");
+		// System.out.println("JWT FOUND!!!");
 
-		model.addAttribute("urls", urlService.getUserUrls(jwt));
+		model.addAttribute("urls", cacheService.getUserUrls(jwt));
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
 
@@ -77,7 +78,9 @@ public class IndexController {
 	@GetMapping("/{shortUrlCode}")
 	public String getUrl(@PathVariable String shortUrlCode, Model model,
 			@RequestParam(required = false) String password, HttpServletRequest req) {
-		UrlRedirDTO result = urlService.getUrlForRedir(shortUrlCode);
+		UrlRedirDTO result = cacheService.getUrlForRedir(shortUrlCode);
+
+		// System.out.println("URL REDIR DTO: " + result);
 
 		if (!result.hasPassword())
 			return "redirect:" + result.originalUrl();
@@ -96,7 +99,7 @@ public class IndexController {
 	public String createUrlPage(Model model, @RequestAttribute(required = true) UserJwtPayload jwt) {
 		model.addAttribute("domainsList", domainsList.list().split(","));
 		if (jwt == null) {
-			System.out.println("JWT NULL!!!");
+			// System.out.println("JWT NULL!!!");
 			return "redirect:/";
 		}
 
@@ -129,7 +132,7 @@ public class IndexController {
 		}
 
 		if (!validDomain) {
-			System.out.println("Invalid domain selected: " + domain);
+			// System.out.println("Invalid domain selected: " + domain);
 			model.addAttribute("error", "Invalid domain selected");
 			return createUrlPage(model, jwt);
 		}
@@ -137,7 +140,7 @@ public class IndexController {
 		ShortenUrlResponseDTO result = urlService.createUserUrl(jwt, domain, originalUrl, toggleCustomUrl,
 				customUrl, togglePassword, password, expiryType, expiryTime, expiryMaxClicks,
 				expiryInactivityDurationDays);
-		System.out.println("Generated short URL code: " + result.displayUrl());
+		// System.out.println("Generated short URL code: " + result.displayUrl());
 		String encodedDu = UriUtils.encode(result.displayUrl(), StandardCharsets.UTF_8);
 		String encodedFl = UriUtils.encode(result.fullLink(), StandardCharsets.UTF_8);
 
@@ -148,7 +151,7 @@ public class IndexController {
 	@PostMapping("/urls/new-anon")
 	public String shortenUrl(@RequestParam String domain, @RequestParam String originalUrl, Model model) {
 		ShortenUrlResponseDTO result = urlService.createAnonShortUrl(domain, originalUrl);
-		System.out.println("Generated short URL code: " + result.displayUrl());
+		// System.out.println("Generated short URL code: " + result.displayUrl());
 		model.addAttribute("result", result);
 		return ViewRegistry.Fragments.IndexAnonResult.shortenUrlResult;
 	}
@@ -170,7 +173,7 @@ public class IndexController {
 	public String deletedUrls(Model model, @RequestAttribute UserJwtPayload jwt) {
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
-		model.addAttribute("urls", urlService.getDeletedUrls(jwt));
+		model.addAttribute("urls", cacheService.getDeletedUrls(jwt));
 		return ViewRegistry.deletedUrls;
 	}
 
@@ -216,7 +219,7 @@ public class IndexController {
 			@RequestParam(required = false) Integer expiryMaxClicks,
 			@RequestParam(required = false) Long expiryInactivityDurationDays,
 			Model model, HttpServletResponse response) {
-		System.out.println();
+		// System.out.println();
 		EditUrlResponseDTO result = urlService.editUrl(jwt, id, originalUrl, shortUrl, hasPassword, password,
 				expiryType, expiryTime, expiryMaxClicks, expiryInactivityDurationDays);
 

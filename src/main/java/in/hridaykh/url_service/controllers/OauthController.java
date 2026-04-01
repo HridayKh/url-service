@@ -63,7 +63,7 @@ public class OauthController {
 			@CookieValue(value = "oauth_state", required = false) String stateCookie,
 			@RequestParam String state, HttpServletResponse response) {
 
-		System.out.println("[CONTROLLER] Received callback with state: " + state + " and state cookie: "
+		// System.out.println("[CONTROLLER] Received callback with state: " + state + " and state cookie: "
 				+ stateCookie);
 		TokenPair tokenPair = jwtService.sessionJwtFromCallback(providerName, code, state, stateCookie);
 
@@ -86,7 +86,7 @@ public class OauthController {
 	@GetMapping("/account")
 	public String account(Model model, @RequestAttribute UserJwtPayload jwt) {
 		if (jwt == null) {
-			System.out.println("JWT NULL!!!");
+			// System.out.println("JWT NULL!!!");
 			return ViewRegistry.indexAnon;
 		}
 

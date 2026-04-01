@@ -31,9 +31,6 @@ public class SecurityFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest req, HttpServletResponse resp, FilterChain chain)
 			throws IOException, ServletException {
-
-		System.out.println("\n\n\tSECURITY FILTER\nHit at: " + req.getMethod() + " " + req.getRequestURI());
-
 		addSecurityHeaders(resp);
 
 		if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
@@ -62,14 +59,14 @@ public class SecurityFilter extends OncePerRequestFilter {
 			throws IOException {
 		String headerToken = req.getHeader(CSRF_HEADER_NAME);
 
-		System.out.println("CSRF Header Token: " + headerToken);
+		// System.out.println("CSRF Header Token: " + headerToken);
 
 		if (cookie == null || headerToken == null) {
 			resp.sendError(HttpServletResponse.SC_FORBIDDEN, "Missing CSRF Token");
 			return false;
 		}
 
-		System.out.println("CSRF Cookie Token: " + cookie.getValue());
+		// System.out.println("CSRF Cookie Token: " + cookie.getValue());
 
 		String cookieToken = cookie.getValue();
 		if (!cookieToken.equals(headerToken)) {
@@ -77,18 +74,18 @@ public class SecurityFilter extends OncePerRequestFilter {
 			return false;
 		}
 
-		System.out.println("Validating CSRF token: " + cookieToken);
+		// System.out.println("Validating CSRF token: " + cookieToken);
 
 		String[] parts = cookieToken.split("\\.");
 		if (parts.length != 2 || !isValidSignature(parts[0], parts[1])) {
 			handleForbidden(resp);
 
-			System.out.println("CSRF signature validation failed for token: " + cookieToken);
+			// System.out.println("CSRF signature validation failed for token: " + cookieToken);
 
 			return false;
 		}
 
-		System.out.println("CSRF signature validation passed for token: " + cookieToken);
+		// System.out.println("CSRF signature validation passed for token: " + cookieToken);
 
 		return true;
 	}

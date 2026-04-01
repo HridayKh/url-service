@@ -13,7 +13,6 @@ import in.hridaykh.url_service.config.OauthConfig;
 @SpringBootApplication
 @EnableConfigurationProperties({ GithubProperties.class, OauthConfig.class, DomainsList.class })
 @EnableScheduling
-@EnableCaching
 public class Main {
 	public static void main(String[] args) {
 		SpringApplication.run(Main.class, args);

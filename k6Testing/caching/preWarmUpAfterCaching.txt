@@ -1,0 +1,43 @@
+after caching run 1(jvm NOT warmed up, SUPER COLD, jvm warmup run 1)
+  
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=31.33s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=2.19%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 2046   27.074859/s
+    checks_succeeded...: 97.80% 2001 out of 2046
+    checks_failed......: 2.19%  45 out of 2046
+
+    ✗ status is 200
+      ↳  97% — ✓ 2001 / ✗ 45
+
+    HTTP
+    http_req_duration..............: avg=9.82s  med=9.03s p(80)=17.47s p(90)=19.03s p(95)=31.33s p(99)=34.41s p(99.9)=42.44s
+      { expected_response:true }...: avg=10.05s med=9.58s p(80)=17.5s  p(90)=19.58s p(95)=31.4s  p(99)=34.42s p(99.9)=42.47s
+    http_req_failed................: 2.19%  45 out of 2046
+    http_reqs......................: 2046   27.074859/s
+
+    EXECUTION
+    dropped_iterations.............: 4278   56.611069/s
+    iteration_duration.............: avg=10.59s med=9.9s  p(80)=17.87s p(90)=24.64s p(95)=31.38s p(99)=34.51s p(99.9)=43.62s
+    iterations.....................: 2046   27.074859/s
+    vus............................: 1      min=1          max=500
+    vus_max........................: 500    min=100        max=500
+
+    NETWORK
+    data_received..................: 20 MB  266 kB/s
+    data_sent......................: 1.2 MB 17 kB/s
+
+
+
+
+running (1m15.6s), 000/500 VUs, 2046 complete and 0 interrupted iterations
+stress_test ✓ [======================================] 000/500 VUs  50s  003.16 iters/s
+ERRO[0076] thresholds on metrics 'http_req_duration' have been crossed 

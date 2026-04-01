@@ -16,10 +16,10 @@ public class CleanOldUrls {
 
 	@Scheduled(fixedDelay = 1 * 60 * 60 * 1000, initialDelay = 10 * 1000)
 	public void cleanUp() {
-		System.out.println("Running scheduled task to clean up old URLs...");
+		// System.out.println("Running scheduled task to clean up old URLs...");
 		shortUrlRepository.softDeleteExpiredUrls();
 		shortUrlRepository.hardDeleteOldUrls();
-		System.out.println("Finished cleaning up old URLs.");
+		// System.out.println("Finished cleaning up old URLs.");
 	}
 
 }

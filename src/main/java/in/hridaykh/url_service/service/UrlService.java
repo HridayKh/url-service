@@ -4,6 +4,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
@@ -32,12 +34,15 @@ public class UrlService {
 	private final ShortUrlRepository urlRepository;
 	private final UserRepository userRepository;
 	private final OauthUtils oauthUtils;
+	private final CacheService cacheService;
 	private static final int MAX_COLLISION_RETRIES = 3;
 
-	public UrlService(ShortUrlRepository urlRepository, UserRepository userRepository, OauthUtils oauthUtils) {
+	public UrlService(ShortUrlRepository urlRepository, UserRepository userRepository, OauthUtils oauthUtils,
+			@Lazy CacheService cacheService) {
 		this.urlRepository = urlRepository;
 		this.userRepository = userRepository;
 		this.oauthUtils = oauthUtils;
+		this.cacheService = cacheService;
 	}
 
 	@Transactional
@@ -90,6 +95,7 @@ public class UrlService {
 		}
 		try {
 			urlRepository.saveAndFlush(url);
+			cacheService.invalidateUserCaches(jwt.sub());
 		} catch (DataIntegrityViolationException e) {
 			if (toggleCustomUrl) {
 				throw new IllegalArgumentException(
@@ -102,7 +108,7 @@ public class UrlService {
 		return new ShortenUrlResponseDTO(domain + "/" + shortUrl, "https://" + domain + "/" + shortUrl);
 	}
 
-	@Transactional
+	@Transactional // ---------- CACHED METHOD ----------
 	public UrlRedirDTO getUrlForRedir(String shortUrlCode) {
 		Url url = urlRepository.findByShortUrl(shortUrlCode)
 				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
@@ -113,6 +119,7 @@ public class UrlService {
 		if (url.isExpired(LocalDateTime.now())) {
 			url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
 			urlRepository.save(url);
+			cacheService.invalidateUrlRedir(shortUrlCode);
 			throw new NotFoundUrlException(shortUrlCode);
 		}
 		UrlRedirDTO res = url.AsDTO().urlRedirDTO();
@@ -134,7 +141,7 @@ public class UrlService {
 		throw new ShortCodeCollisionException(MAX_COLLISION_RETRIES);
 	}
 
-	@Transactional
+	@Transactional // ---------- CACHED METHOD ----------
 	public UrlsList[] getUserUrls(UserJwtPayload jwt) {
 		if (jwt == null)
 			throw new NotLoggedInException();
@@ -168,10 +175,12 @@ public class UrlService {
 		url.markAsDeleted(LocalDateTime.now(), DeleteReason.USER_REQUEST);
 		urlRepository.save(url);
 
+		cacheService.invalidateUserCaches(jwt.sub());
+
 		return true;
 	}
 
-	@Transactional
+	@Transactional // ---------- CACHED METHOD ----------
 	public DeletedUrlsList[] getDeletedUrls(UserJwtPayload jwt) {
 		if (jwt == null)
 			throw new NotLoggedInException();
@@ -199,6 +208,8 @@ public class UrlService {
 		url.markAsRestored(LocalDateTime.now());
 		urlRepository.save(url);
 
+		cacheService.invalidateUserCaches(jwt.sub());
+
 		return true;
 	}
 
@@ -207,7 +218,7 @@ public class UrlService {
 	}
 
 	@Transactional
-	public EditUrlResponseDTO editUrl(UserJwtPayload jwt, Long id, String originalUrl, String shortUrl,
+	public EditUrlResponseDTO editUrl(UserJwtPayload jwt, Long id, String originalUrl, String oldShortUrl,
 			boolean hasPassword, String password, ExpiryType expiryType, LocalDateTime expiryTime,
 			Integer expiryMaxClicks, Long expiryInactivityDurationDays) {
 
@@ -217,8 +228,8 @@ public class UrlService {
 		if (!UrlUtils.isValidUrl(originalUrl))
 			return new EditUrlResponseDTO(null, null, false, "Invalid original URL.");
 
-		if (shortUrl == null || shortUrl.isBlank())
-			shortUrl = UrlUtils.generateUniqueCode();
+		if (oldShortUrl == null || oldShortUrl.isBlank())
+			oldShortUrl = UrlUtils.generateUniqueCode();
 
 		if (hasPassword && (password == null || password.isBlank()))
 			return new EditUrlResponseDTO(null, null, false,
@@ -230,7 +241,7 @@ public class UrlService {
 		if (url == null)
 			return new EditUrlResponseDTO(null, null, false, "URL not found.");
 
-		url.update(userRepository.getReferenceById(jwt.sub()), originalUrl, shortUrl, passHash);
+		url.update(userRepository.getReferenceById(jwt.sub()), originalUrl, oldShortUrl, passHash);
 		switch (expiryType) {
 			case NONE -> url.UrlExpiry().none();
 			case TIME -> {
@@ -257,12 +268,15 @@ public class UrlService {
 		}
 		try {
 			urlRepository.saveAndFlush(url);
+			cacheService.invalidateUserCaches(jwt.sub());
+			cacheService.invalidateUrlRedir(oldShortUrl);
 		} catch (DataIntegrityViolationException e) {
 			return new EditUrlResponseDTO(null, null, false,
-					"The custom code '" + shortUrl + "' is already taken.");
+					"The custom code '" + oldShortUrl + "' is already taken.");
 		}
 
-		return new EditUrlResponseDTO("urls.HridayKh.in/" + shortUrl, "https://urls.HridayKh.in/" + shortUrl,
+		return new EditUrlResponseDTO("urls.HridayKh.in/" + oldShortUrl,
+				"https://urls.HridayKh.in/" + oldShortUrl,
 				true,
 				null);
 	}

@@ -1,0 +1,42 @@
+after caching run 2 (jvm warmup run 2)
+  
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=15.38s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=1.68%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 3018   41.073883/s
+    checks_succeeded...: 98.31% 2967 out of 3018
+    checks_failed......: 1.68%  51 out of 3018
+
+    ✗ status is 200
+      ↳  98% — ✓ 2967 / ✗ 51
+
+    HTTP
+    http_req_duration..............: avg=5.64s med=5.5s  p(80)=9.32s p(90)=13.23s p(95)=15.38s p(99)=23.3s  p(99.9)=35.56s
+      { expected_response:true }...: avg=5.73s med=5.6s  p(80)=9.37s p(90)=13.28s p(95)=15.39s p(99)=23.73s p(99.9)=35.59s
+    http_req_failed................: 1.68%  51 out of 3018
+    http_reqs......................: 3018   41.073883/s
+
+    EXECUTION
+    dropped_iterations.............: 3306   44.993459/s
+    iteration_duration.............: avg=6.22s med=5.69s p(80)=9.51s p(90)=14.13s p(95)=16.2s  p(99)=30s    p(99.9)=35.85s
+    iterations.....................: 3018   41.073883/s
+    vus............................: 1      min=1          max=500
+    vus_max........................: 500    min=100        max=500
+
+    NETWORK
+    data_received..................: 29 MB  388 kB/s
+    data_sent......................: 1.3 MB 18 kB/s
+
+
+
+
+running (1m13.5s), 000/500 VUs, 3018 complete and 0 interrupted iterations
+stress_test ✓ [======================================] 000/500 VUs  50s  003.16 iters/s

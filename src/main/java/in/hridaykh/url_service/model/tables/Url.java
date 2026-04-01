@@ -257,7 +257,7 @@ public class Url {
 		}
 
 		public UrlRedirDTO urlRedirDTO() {
-			if (URL.passwordHash.isBlank())
+			if (URL.passwordHash != null && URL.passwordHash.isBlank())
 				URL.passwordHash = null;
 			return new UrlRedirDTO(URL.passwordHash != null, URL.originalUrl);
 		}
