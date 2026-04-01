@@ -3,22 +3,20 @@ import { check } from 'k6';
 
 export const options = {
 	scenarios: {
-		stress_test: {
+		warmup: {
 			executor: 'ramping-arrival-rate',
-			startRate: 30,       // Start at 10 iterations per second
+			startRate: 5,
 			timeUnit: '1s',
-			preAllocatedVUs: 100, // Initial pool of VUs
-			maxVUs: 500,          // Max VUs if response times get slow
+			preAllocatedVUs: 50,
+			maxVUs: 100,
 			stages: [
-				{ target: 50, duration: '30s' }, // Ramp to 50 RPS
-				{ target: 100, duration: '30s' }, // Ramp to 100 RPS
-				{ target: 150, duration: '30s' }, // Ramp to 150 RPS
-				{ target: 200, duration: '30s' }, // Ramp to 200 RPS
-				{ target: 200, duration: '30s' }, // Hold 200 RPS to check stability
+				{ target: 10, duration: '30s' },
+				{ target: 30, duration: '1m' },
+				{ target: 70, duration: '1m' },
+				{ target: 100, duration: '1m' },
 			],
 		},
 	},
-	// Extensive stats to see the "tail latency" impact of caching
 	summaryTrendStats: ['avg', 'med', 'p(80)', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
 	thresholds: {
 		http_req_failed: [{ threshold: 'rate<0.05', abortOnFail: false }],
@@ -27,8 +25,8 @@ export const options = {
 };
 
 export default function () {
-	const jwt = "";
-	const rt = "";
+	const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3VybHMuaHJpZGF5a2guaW4vb2F1dGgvY2FsbGJhY2siLCJzdWIiOjIsImF1ZCI6InVybHMuaHJpZGF5a2guaW4iLCJleHAiOjE3NzUwNjU3MjUsIm5iZiI6MTc3NTA2NDgyNSwiaWF0IjoxNzc1MDY0ODI1LCJqdGkiOjUzLCJ2ZXIiOjEsImVtYWlsIjoiaHJpZGF5a2gxMjM0QGdtYWlsLmNvbSIsInBmcCI6Imh0dHBzOi8vYXZhdGFycy5naXRodWJ1c2VyY29udGVudC5jb20vdS85MzA1MDU4Mj92PTQifQ.m6EQ-5-KqYp3AuDj8GTM_PKjeoirLyUy17ngbwWuy2c";
+	const rt = "cCN2gbyLtubfZ8ZhSPFr_PQtOS-CumvWOqtw24Bg3wNbaQ8cfqgev6ENVSbDu9PKrnKJFInPWqDSUERZM4HpOg";
 	const params = {
 		headers: {
 			'Cookie': `jwt=${jwt}; refreshToken=${rt}`

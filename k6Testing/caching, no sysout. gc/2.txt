@@ -1,0 +1,54 @@
+k62.js
+executor: 'ramping-arrival-rate',
+startRate: 30,
+timeUnit: '1s',
+preAllocatedVUs: 100,
+maxVUs: 250,
+stages: [
+	{ target: 50, duration: '30s' },
+	{ target: 100, duration: '30s' },
+	{ target: 150, duration: '30s' },
+	{ target: 200, duration: '30s' },
+	{ target: 200, duration: '30s' },
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=3.55s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=1.80%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 9926   55.144019/s
+    checks_succeeded...: 98.19% 9747 out of 9926
+    checks_failed......: 1.80%  179 out of 9926
+
+    ✗ status is 200
+      ↳  98% — ✓ 9747 / ✗ 179
+
+    HTTP
+    http_req_duration..............: avg=1.92s med=335.02ms p(80)=925.54ms p(90)=1.5s  p(95)=3.55s p(99)=1m0s   p(99.9)=1m0s  
+      { expected_response:true }...: avg=1.07s med=324.02ms p(80)=897.97ms p(90)=1.38s p(95)=2.45s p(99)=31.74s p(99.9)=33.15s
+    http_req_failed................: 1.80%  179 out of 9926
+    http_reqs......................: 9926   55.144019/s
+
+    EXECUTION
+    dropped_iterations.............: 8509   47.271858/s
+    iteration_duration.............: avg=2.04s med=351.19ms p(80)=954.28ms p(90)=1.62s p(95)=4.34s p(99)=1m0s   p(99.9)=1m0s  
+    iterations.....................: 9926   55.144019/s
+    vus............................: 13     min=13          max=250
+    vus_max........................: 250    min=100         max=250
+
+    NETWORK
+    data_received..................: 54 MB  297 kB/s
+    data_sent......................: 1.4 MB 7.7 kB/s
+
+
+
+
+running (3m00.0s), 000/250 VUs, 9926 complete and 13 interrupted iterations
+stress_test ✓ [======================================] 013/250 VUs  2m30s  200.00 iters/s
+ERRO[0180] thresholds on metrics 'http_req_duration' have been crossed 

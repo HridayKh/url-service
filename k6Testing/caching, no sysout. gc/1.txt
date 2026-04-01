@@ -1,0 +1,52 @@
+warmup.js
+executor: 'ramping-arrival-rate',
+startRate: 5,
+timeUnit: '1s',
+preAllocatedVUs: 50,
+maxVUs: 100,
+stages: [
+	{ target: 10, duration: '30s' },
+	{ target: 30, duration: '1m' },
+	{ target: 70, duration: '1m' },
+	{ target: 100, duration: '1m' },
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=1.03s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.04%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 9524   45.170697/s
+    checks_succeeded...: 99.95% 9520 out of 9524
+    checks_failed......: 0.04%  4 out of 9524
+
+    ✗ status is 200
+      ↳  99% — ✓ 9520 / ✗ 4
+
+    HTTP
+    http_req_duration..............: avg=352.01ms med=209.37ms p(80)=414.43ms p(90)=891.17ms p(95)=1.03s p(99)=1.46s p(99.9)=2.01s
+      { expected_response:true }...: avg=352.16ms med=209.4ms  p(80)=414.45ms p(90)=891.18ms p(95)=1.03s p(99)=1.46s p(99.9)=2.01s
+    http_req_failed................: 0.04%  4 out of 9524
+    http_reqs......................: 9524   45.170697/s
+
+    EXECUTION
+    iteration_duration.............: avg=367.04ms med=210.05ms p(80)=418.2ms  p(90)=894.92ms p(95)=1.04s p(99)=1.49s p(99.9)=2.31s
+    iterations.....................: 9524   45.170697/s
+    vus............................: 34     min=3         max=47
+    vus_max........................: 50     min=50        max=50
+
+    NETWORK
+    data_received..................: 84 MB  398 kB/s
+    data_sent......................: 930 kB 4.4 kB/s
+
+
+
+
+running (3m30.8s), 000/050 VUs, 9524 complete and 0 interrupted iterations
+warmup ✓ [======================================] 000/050 VUs  3m30s  100.00 iters/s
+ERRO[0211] thresholds on metrics 'http_req_duration' have been crossed 

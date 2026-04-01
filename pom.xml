@@ -11,7 +11,7 @@
 	</parent>
 	<groupId>in.hridaykh</groupId>
 	<artifactId>url-service</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>v1</version>
 	<name>url-service</name>
 	<description>Dynamic URL shortener with QR generation (Spring Boot)</description>
 	<url />

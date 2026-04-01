@@ -21,18 +21,18 @@ import in.hridaykh.url_service.repository.ShortUrlRepository;
 @Service
 public class CacheService {
 	private final Cache<String, UrlRedirDTO> urlRedirCache = Caffeine.newBuilder()
-			.expireAfterWrite(5, TimeUnit.MINUTES)
-			.maximumSize(1_000)
+			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.maximumSize(100)
 			.build();
 
 	private final Cache<Long, UrlsList[]> urlListCache = Caffeine.newBuilder()
-			.expireAfterWrite(5, TimeUnit.MINUTES)
-			.maximumSize(1_000)
+			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.maximumSize(100)
 			.build();
 
 	private final Cache<Long, DeletedUrlsList[]> deletedUrlList = Caffeine.newBuilder()
-			.expireAfterWrite(5, TimeUnit.MINUTES)
-			.maximumSize(1_000)
+			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.maximumSize(100)
 			.build();
 
 	private final ConcurrentHashMap<String, Integer> clickBuffer = new ConcurrentHashMap<>();
@@ -59,9 +59,10 @@ public class CacheService {
 		return dto;
 	}
 
-	@Scheduled(fixedDelay = 5000)
+	@Scheduled(fixedDelay = 10000)
 	public void updateClicksInDatabase() {
-		// System.out.println("Flushing click buffer to database. Buffer size: " + clickBuffer.size());
+		// System.out.println("Flushing click buffer to database. Buffer size: " +
+		// clickBuffer.size());
 		if (clickBuffer.isEmpty())
 			return;
 		Map<String, Integer> snapshot = new HashMap<>(clickBuffer);

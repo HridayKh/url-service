@@ -5,16 +5,27 @@ export const options = {
 	scenarios: {
 		stress_test: {
 			executor: 'ramping-arrival-rate',
-			startRate: 30,       // Start at 10 iterations per second
+			startRate: 5,
 			timeUnit: '1s',
-			preAllocatedVUs: 100, // Initial pool of VUs
-			maxVUs: 500,          // Max VUs if response times get slow
+			preAllocatedVUs: 100,
+			maxVUs: 250,
 			stages: [
-				{ target: 50, duration: '30s' }, // Ramp to 50 RPS
-				{ target: 100, duration: '30s' }, // Ramp to 100 RPS
-				{ target: 150, duration: '30s' }, // Ramp to 150 RPS
-				{ target: 200, duration: '30s' }, // Ramp to 200 RPS
-				{ target: 200, duration: '30s' }, // Hold 200 RPS to check stability
+				{ target: 50, duration: '30s' },
+				{ target: 100, duration: '30s' },
+				{ target: 125, duration: '30s' },
+				{ target: 150, duration: '45s' },
+				{ target: 175, duration: '1m' },
+				{ target: 200, duration: '1m' },
+				{ target: 200, duration: '1m' },
+				{ target: 200, duration: '1m' },
+				{ target: 175, duration: '1m' },
+				{ target: 150, duration: '45s' },
+				{ target: 125, duration: '30s' },
+				{ target: 100, duration: '30s' },
+				{ target: 75, duration: '30s' },
+				{ target: 50, duration: '30s' },
+				{ target: 25, duration: '30s' },
+				{ target: 0, duration: '30s' },
 			],
 		},
 	},
@@ -27,8 +38,8 @@ export const options = {
 };
 
 export default function () {
-	const jwt = "";
-	const rt = "";
+	const jwt = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3VybHMuaHJpZGF5a2guaW4vb2F1dGgvY2FsbGJhY2siLCJzdWIiOjIsImF1ZCI6InVybHMuaHJpZGF5a2guaW4iLCJleHAiOjE3NzUwNjY2NjksIm5iZiI6MTc3NTA2NTc2OSwiaWF0IjoxNzc1MDY1NzY5LCJqdGkiOjUzLCJ2ZXIiOjEsImVtYWlsIjoiaHJpZGF5a2gxMjM0QGdtYWlsLmNvbSIsInBmcCI6Imh0dHBzOi8vYXZhdGFycy5naXRodWJ1c2VyY29udGVudC5jb20vdS85MzA1MDU4Mj92PTQifQ.XMhqAFp0uCwkqW7SeVZ0D54MHuScYAQ8zd30rqMuA1s";
+	const rt = "U8NueU_D9QSVpDMj1WMtyMz_dMoN4GsQ4xuYpv0VyD787H7gzWZFtrLr0Xuyk2X3P2pmDyUNWG52XhtXAFQ4cA";
 	const params = {
 		headers: {
 			'Cookie': `jwt=${jwt}; refreshToken=${rt}`
