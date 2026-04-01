@@ -1,18 +1,16 @@
 package in.hridaykh.url_service.service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jspecify.annotations.Nullable;
-import org.springframework.cglib.core.Local;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.dtos.DeletedUrlsList;
 import in.hridaykh.url_service.dtos.EditUrlResponseDTO;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
+import in.hridaykh.url_service.dtos.UrlRedirDTO;
 import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.exception.InvalidUrlException;
 import in.hridaykh.url_service.exception.NotFoundUrlException;
@@ -105,7 +103,7 @@ public class UrlService {
 	}
 
 	@Transactional
-	public String getOriginalUrl(String shortUrlCode) {
+	public UrlRedirDTO getUrlForRedir(String shortUrlCode) {
 		Url url = urlRepository.findByShortUrl(shortUrlCode)
 				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
 
@@ -117,11 +115,14 @@ public class UrlService {
 			urlRepository.save(url);
 			throw new NotFoundUrlException(shortUrlCode);
 		}
+		UrlRedirDTO res = url.AsDTO().urlRedirDTO();
+
+		if (res.hasPassword())
+			return res;
 
 		url.incrementClicksCount(LocalDateTime.now());
 		urlRepository.save(url);
-
-		return url.originalUrl();
+		return res;
 	}
 
 	private String generateUniqueShortCode() {
@@ -148,7 +149,7 @@ public class UrlService {
 				urlRepository.save(url);
 				continue;
 			}
-			urlsList.add(url.toUrlList("urls.hridaykh.in/"));
+			urlsList.add(url.AsDTO().urlList("urls.hridaykh.in/"));
 		}
 
 		return urlsList.toArray(new UrlsList[0]);
@@ -180,7 +181,7 @@ public class UrlService {
 		List<DeletedUrlsList> urlsList = new ArrayList<>();
 
 		for (Url url : urls)
-			urlsList.add(url.toDeletedUrlList("urls.hridaykh.in/"));
+			urlsList.add(url.AsDTO().deletedUrlList("urls.hridaykh.in/"));
 
 		return urlsList.toArray(new DeletedUrlsList[0]);
 	}
@@ -229,7 +230,7 @@ public class UrlService {
 		if (url == null)
 			return new EditUrlResponseDTO(null, null, false, "URL not found.");
 
-		url.getAndUpdate(userRepository.getReferenceById(jwt.sub()), id, originalUrl, shortUrl, passHash);
+		url.update(userRepository.getReferenceById(jwt.sub()), originalUrl, shortUrl, passHash);
 		switch (expiryType) {
 			case NONE -> url.UrlExpiry().none();
 			case TIME -> {
@@ -264,6 +265,27 @@ public class UrlService {
 		return new EditUrlResponseDTO("urls.HridayKh.in/" + shortUrl, "https://urls.HridayKh.in/" + shortUrl,
 				true,
 				null);
+	}
+
+	@Transactional
+	public boolean verifyPassword(String shortUrlCode, String password) {
+		Url url = urlRepository.findByShortUrl(shortUrlCode)
+				.orElseThrow(() -> new NotFoundUrlException(shortUrlCode));
+
+		if (!url.isUsable())
+			throw new NotFoundUrlException(shortUrlCode);
+
+		if (url.isExpired(LocalDateTime.now())) {
+			url.markAsDeleted(LocalDateTime.now(), DeleteReason.EXPIRED);
+			urlRepository.save(url);
+			throw new NotFoundUrlException(shortUrlCode);
+		}
+		if (!url.verifyPassword(oauthUtils.signHmacSHA256(password)))
+			return false;
+
+		url.incrementClicksCount(LocalDateTime.now());
+		urlRepository.save(url);
+		return true;
 	}
 
 }

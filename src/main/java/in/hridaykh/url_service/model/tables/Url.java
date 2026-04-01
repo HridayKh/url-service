@@ -1,5 +1,6 @@
 package in.hridaykh.url_service.model.tables;
 
+import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -10,6 +11,7 @@ import org.hibernate.type.SqlTypes;
 
 import in.hridaykh.url_service.dtos.DeletedUrlsList;
 import in.hridaykh.url_service.dtos.UrlEditDTO;
+import in.hridaykh.url_service.dtos.UrlRedirDTO;
 import in.hridaykh.url_service.dtos.UrlsList;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
@@ -88,13 +90,28 @@ public class Url {
 	@Column(updatable = false, nullable = false)
 	private LocalDateTime createdAt;
 
-	public String originalUrl() {
-		return originalUrl;
+	// ---------- CREATE ----------
+
+	public void createAnonUrl(String originalUrl, String shortUrlCode) {
+		this.originalUrl = originalUrl;
+		this.shortUrl = shortUrlCode;
+		this.expiryType = ExpiryType.INACTIVITY;
+		this.expiryInactivityDurationSeconds = Duration.ofDays(365).getSeconds();
+
 	}
 
-	public void incrementClicksCount(LocalDateTime now) {
-		this.clickCount++;
-		this.lastClickedAt = now;
+	public void createUserUrl(User user, String originalUrl, String shortUrlCode,
+			String passwordHash) {
+		this.user = user;
+		this.originalUrl = originalUrl;
+		this.shortUrl = shortUrlCode;
+		this.passwordHash = passwordHash;
+	}
+
+	// ---------- READ ----------
+
+	public boolean isUsable() {
+		return !isDeleted && isActive;
 	}
 
 	public boolean isExpired(LocalDateTime now) {
@@ -117,52 +134,25 @@ public class Url {
 		}
 	}
 
-	public void markAsDeleted(LocalDateTime now, DeleteReason deleteReason) {
-		this.isDeleted = true;
-		this.isActive = false;
-		this.deletedAt = now;
-		this.deleteReason = deleteReason;
+	public boolean verifyUserOwnership(long userId) {
+		return user != null && userId == user.getId();
 	}
 
-	public boolean isUsable() {
-		return !isDeleted && isActive;
+	// ---------- UPDATE ----------
+
+	public void incrementClicksCount(LocalDateTime now) {
+		this.clickCount++;
+		this.lastClickedAt = now;
 	}
 
-	public void createAnonUrl(String originalUrl, String shortUrlCode) {
-		this.originalUrl = originalUrl;
-		this.shortUrl = shortUrlCode;
-		this.expiryType = ExpiryType.INACTIVITY;
-		this.expiryInactivityDurationSeconds = Duration.ofDays(365).getSeconds();
-
-	}
-
-	public void createUserUrl(User user, String originalUrl, String shortUrlCode,
-			String passwordHash) {
+	public void update(User user, String originalUrl, String shortUrl, String passHash) {
 		this.user = user;
 		this.originalUrl = originalUrl;
-		this.shortUrl = shortUrlCode;
-		this.passwordHash = passwordHash;
+		this.shortUrl = shortUrl;
+		this.passwordHash = passHash;
 	}
 
-	public UrlsList toUrlList(String domain) {
-		String id = String.valueOf(this.id);
-		String displayUrl = domain + this.shortUrl;
-		String fullLink = "https://" + domain + this.shortUrl;
-		String originalUrl = this.originalUrl;
-		String lastClicked = this.lastClickedAt != null ? String.valueOf(this.lastClickedAt) : "Never";
-		int clickCount = this.clickCount;
-		return new UrlsList(id, displayUrl, fullLink, originalUrl, lastClicked, clickCount);
-	}
-
-	public DeletedUrlsList toDeletedUrlList(String domain) {
-		String id = String.valueOf(this.id);
-		String displayUrl = domain + this.shortUrl;
-		String fullLink = "https://" + domain + this.shortUrl;
-		String originalUrl = this.originalUrl;
-		String deleteReason = this.deleteReason != null ? this.deleteReason.name() : "Unknown";
-		String deletedAt = this.deletedAt != null ? String.valueOf(this.deletedAt) : "Unknown";
-		return new DeletedUrlsList(id, displayUrl, fullLink, originalUrl, deleteReason, deletedAt);
-	}
+	// ---------- DELETE ----------
 
 	public void markAsRestored(LocalDateTime now) {
 		this.isDeleted = false;
@@ -175,15 +165,20 @@ public class Url {
 		this.expiryInactivityDurationSeconds = null;
 	}
 
-	public boolean verifyUserOwnership(long userId) {
-		return user != null && userId == user.getId();
+	public void markAsDeleted(LocalDateTime now, DeleteReason deleteReason) {
+		this.isDeleted = true;
+		this.isActive = false;
+		this.deletedAt = now;
+		this.deleteReason = deleteReason;
 	}
+
+	// ---------- SUB-CLASS: EXPIRY ----------
 
 	public UrlExpiry UrlExpiry() {
 		return new UrlExpiry(this);
 	}
 
-	public static class UrlExpiry {
+	public class UrlExpiry {
 		Url URL;
 
 		public UrlExpiry(Url URL_) {
@@ -234,29 +229,63 @@ public class Url {
 		}
 	}
 
-	public UrlEditDTO toUrlEditDTO() {
-		Long id = this.id;
-		String originalUrl = this.originalUrl;
-		String shortUrl = this.shortUrl;
-		boolean hasPassword = this.passwordHash != null;
-		String expiryType = this.expiryType != null ? this.expiryType.name() : ExpiryType.NONE.name();
-		String expiryTime = this.expiryTime != null ? String.valueOf(this.expiryTime) : null;
-		Integer expiryMaxClicks = this.expiryTime != null ? this.expiryMaxClicks : null;
+	// ---------- SUB-CLASS: DTOs ----------
 
-		Long expiryInactivityDurationDays = this.expiryInactivityDurationSeconds != null
-				? Duration.ofSeconds(this.expiryInactivityDurationSeconds).toDays()
-				: null;
-
-		return new UrlEditDTO(id, originalUrl, shortUrl, hasPassword, expiryType, expiryTime, expiryMaxClicks,
-				expiryInactivityDurationDays);
+	public AsDTO AsDTO() {
+		return new AsDTO(this);
 	}
 
-	public void getAndUpdate(User user, Long id, String originalUrl, String shortUrl, String passHash) {
-		this.user = user;
-		this.id = id;
-		this.originalUrl = originalUrl;
-		this.shortUrl = shortUrl;
-		this.passwordHash = passHash;
+	public class AsDTO {
+		Url URL;
+
+		public AsDTO(Url URL_) {
+			this.URL = URL_;
+		}
+
+		public UrlEditDTO urlEditDTO() {
+			boolean hasPassword = URL.passwordHash != null;
+			String expiryType = URL.expiryType != null ? URL.expiryType.name() : ExpiryType.NONE.name();
+			String expiryTime = URL.expiryTime != null ? String.valueOf(URL.expiryTime) : null;
+			Integer expiryMaxClicks = URL.expiryTime != null ? URL.expiryMaxClicks : null;
+
+			Long expInactiveDurDays = null;
+			if (URL.expiryInactivityDurationSeconds != null)
+				expInactiveDurDays = Duration.ofSeconds(URL.expiryInactivityDurationSeconds).toDays();
+
+			return new UrlEditDTO(URL.id, URL.originalUrl, URL.shortUrl, hasPassword, expiryType,
+					expiryTime, expiryMaxClicks, expInactiveDurDays);
+		}
+
+		public UrlRedirDTO urlRedirDTO() {
+			if (URL.passwordHash.isBlank())
+				URL.passwordHash = null;
+			return new UrlRedirDTO(URL.passwordHash != null, URL.originalUrl);
+		}
+
+		public UrlsList urlList(String domain) {
+			String id = String.valueOf(URL.id);
+			String displayUrl = domain + URL.shortUrl;
+			String fullLink = "https://" + domain + URL.shortUrl;
+			String originalUrl = URL.originalUrl;
+			String lastClicked = URL.lastClickedAt != null ? String.valueOf(URL.lastClickedAt) : "Never";
+			int clickCount = URL.clickCount;
+			return new UrlsList(id, displayUrl, fullLink, originalUrl, lastClicked, clickCount);
+		}
+
+		public DeletedUrlsList deletedUrlList(String domain) {
+			String id = String.valueOf(URL.id);
+			String displayUrl = domain + URL.shortUrl;
+			String fullLink = "https://" + domain + URL.shortUrl;
+			String originalUrl = URL.originalUrl;
+			String deleteReason = URL.deleteReason != null ? URL.deleteReason.name() : "Unknown";
+			String deletedAt = URL.deletedAt != null ? String.valueOf(URL.deletedAt) : "Unknown";
+			return new DeletedUrlsList(id, displayUrl, fullLink, originalUrl, deleteReason, deletedAt);
+		}
+
+	}
+
+	public boolean verifyPassword(String passHash) {
+		return MessageDigest.isEqual(passHash.getBytes(), this.passwordHash.getBytes());
 	}
 
 }

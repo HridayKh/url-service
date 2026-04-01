@@ -16,10 +16,12 @@ import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
 import in.hridaykh.url_service.dtos.EditUrlResponseDTO;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
+import in.hridaykh.url_service.dtos.UrlRedirDTO;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.Url;
 import in.hridaykh.url_service.service.UrlService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
@@ -73,8 +75,21 @@ public class IndexController {
 	}
 
 	@GetMapping("/{shortUrlCode}")
-	public String getUrl(@PathVariable String shortUrlCode) {
-		return "redirect:" + urlService.getOriginalUrl(shortUrlCode);
+	public String getUrl(@PathVariable String shortUrlCode, Model model,
+			@RequestParam(required = false) String password, HttpServletRequest req) {
+		UrlRedirDTO result = urlService.getUrlForRedir(shortUrlCode);
+
+		if (!result.hasPassword())
+			return "redirect:" + result.originalUrl();
+
+		if (password == null || password.isBlank())
+			return ViewRegistry.passwordPage;
+
+		if (urlService.verifyPassword(shortUrlCode, password))
+			return "redirect:" + result.originalUrl();
+
+		model.addAttribute("error", "Incorrect password! Please try again.");
+		return ViewRegistry.passwordPage;
 	}
 
 	@GetMapping("/new")
@@ -182,7 +197,7 @@ public class IndexController {
 		Url url = urlService.getUrlById(urlId);
 		if (url == null || !url.verifyUserOwnership(jwt.sub()))
 			return "redirect:/";
-		model.addAttribute("url", url.toUrlEditDTO());
+		model.addAttribute("url", url.AsDTO().urlEditDTO());
 
 		model.addAttribute("userPfp", jwt.pfp());
 		model.addAttribute("userId", jwt.sub());
