@@ -20,6 +20,7 @@ import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.service.JwtService;
 import in.hridaykh.url_service.service.OauthService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
@@ -61,10 +62,8 @@ public class OauthController {
 	@GetMapping("/oauth/callback/{providerName}")
 	public String oauthCallback(@PathVariable OauthProviderNames providerName, @RequestParam String code,
 			@CookieValue(value = "oauth_state", required = false) String stateCookie,
-			@RequestParam String state, HttpServletResponse response) {
+			@RequestParam String state, HttpServletResponse response, HttpServletRequest request) {
 
-		// System.out.println("[CONTROLLER] Received callback with state: " + state + "
-		// and state cookie: " + stateCookie);
 		TokenPair tokenPair = jwtService.sessionJwtFromCallback(providerName, code, state, stateCookie);
 
 		ResponseCookie deleteCookie = ResponseCookie.from(oauthConfig.stateCookieName(), "").maxAge(0)

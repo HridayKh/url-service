@@ -12,9 +12,9 @@ import org.springframework.stereotype.Service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
-import in.hridaykh.url_service.dtos.DeletedUrlsList;
+import in.hridaykh.url_service.dtos.urls.DeletedUrlsList;
 import in.hridaykh.url_service.dtos.UrlRedirDTO;
-import in.hridaykh.url_service.dtos.UrlsList;
+import in.hridaykh.url_service.dtos.urls.UrlsList;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.repository.ShortUrlRepository;
 

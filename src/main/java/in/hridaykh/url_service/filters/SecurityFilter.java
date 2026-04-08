@@ -80,12 +80,14 @@ public class SecurityFilter extends OncePerRequestFilter {
 		if (parts.length != 2 || !isValidSignature(parts[0], parts[1])) {
 			handleForbidden(resp);
 
-			// System.out.println("CSRF signature validation failed for token: " + cookieToken);
+			// System.out.println("CSRF signature validation failed for token: " +
+			// cookieToken);
 
 			return false;
 		}
 
-		// System.out.println("CSRF signature validation passed for token: " + cookieToken);
+		// System.out.println("CSRF signature validation passed for token: " +
+		// cookieToken);
 
 		return true;
 	}
@@ -118,9 +120,10 @@ public class SecurityFilter extends OncePerRequestFilter {
 		res.setHeader("X-XSS-Protection", "0");
 		res.setHeader("Content-Security-Policy",
 				"default-src 'self'; " +
-						"script-src 'self' 'unsafe-inline'; " +
+						"script-src 'self' 'unsafe-inline' https://cloud.umami.is; " +
 						"style-src 'self' 'unsafe-inline'; " +
-						"img-src 'self' data: https://avatars.githubusercontent.com;");
+						"img-src 'self' data: https://avatars.githubusercontent.com; " +
+						"connect-src 'self' https://api-gateway.umami.dev https://cloud.umami.is;");
 		res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 	}
 }

@@ -13,7 +13,7 @@
 	<artifactId>url-service</artifactId>
 	<version>v1</version>
 	<name>url-service</name>
-	<description>Dynamic URL shortener with QR generation (Spring Boot)</description>
+	<description>Dynamic URL shortener with (Spring Boot)</description>
 	<url />
 	<licenses>
 		<license />

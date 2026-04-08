@@ -9,10 +9,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import in.hridaykh.url_service.dtos.DeletedUrlsList;
-import in.hridaykh.url_service.dtos.UrlEditDTO;
+import in.hridaykh.url_service.dtos.urls.DeletedUrlsList;
 import in.hridaykh.url_service.dtos.UrlRedirDTO;
-import in.hridaykh.url_service.dtos.UrlsList;
+import in.hridaykh.url_service.dtos.urls.UrlEditDTO;
+import in.hridaykh.url_service.dtos.urls.UrlsList;
 import in.hridaykh.url_service.model.enums.DeleteReason;
 import in.hridaykh.url_service.model.enums.ExpiryType;
 import jakarta.persistence.Column;

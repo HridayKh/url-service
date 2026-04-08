@@ -14,7 +14,7 @@ import org.springframework.web.util.UriUtils;
 
 import in.hridaykh.url_service.config.DomainsList;
 import in.hridaykh.url_service.config.ViewRegistry;
-import in.hridaykh.url_service.dtos.EditUrlResponseDTO;
+import in.hridaykh.url_service.dtos.urls.EditUrlResponseDTO;
 import in.hridaykh.url_service.dtos.ShortenUrlResponseDTO;
 import in.hridaykh.url_service.dtos.UrlRedirDTO;
 import in.hridaykh.url_service.model.enums.ExpiryType;

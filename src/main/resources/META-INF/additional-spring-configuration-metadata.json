@@ -33,5 +33,15 @@
     "name": "oauth.refresh-token-cookie-name",
     "type": "java.lang.String",
     "description": "A description for 'oauth.refreshTokenCookieName'"
+  },
+  {
+    "name": "oauth.google.client-id",
+    "type": "java.lang.String",
+    "description": "A description for 'oauth.google.client-id'"
+  },
+  {
+    "name": "oauth.google.client-secret",
+    "type": "java.lang.String",
+    "description": "A description for 'oauth.google.client-secret'"
   }
 ]}

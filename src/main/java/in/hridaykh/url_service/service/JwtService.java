@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import in.hridaykh.url_service.dtos.oauth.OauthUserDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import in.hridaykh.url_service.model.oauth.GithubUser;
+import in.hridaykh.url_service.model.oauth.GoogleUser;
 import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.OauthProvider;
@@ -20,16 +21,19 @@ import in.hridaykh.url_service.repository.OauthProvidersRepository;
 import in.hridaykh.url_service.repository.UserRepository;
 import in.hridaykh.url_service.repository.UserSessionRepository;
 import in.hridaykh.url_service.service.integration.GithubIntegration;
+import in.hridaykh.url_service.service.integration.GoogleIntegration;
 import in.hridaykh.url_service.utils.OauthUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import tools.jackson.databind.ObjectMapper;
 import in.hridaykh.url_service.config.GithubProperties;
+import in.hridaykh.url_service.config.GoogleProperties;
 import in.hridaykh.url_service.config.OauthConfig;
 
 @Service
 public class JwtService {
 	private final GithubProperties githubProps;
+	private final GoogleProperties googleProps;
 	private final OauthUtils oauthUtils;
 	private final UserRepository userRepository;
 	private final OauthProvidersRepository oauthProvidersRepository;
@@ -38,19 +42,23 @@ public class JwtService {
 	private final Base64.Encoder encoder = Base64.getUrlEncoder().withoutPadding();
 	private final String JWT_HEADER = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9";
 	private final GithubIntegration githubIntegration;
+	private final GoogleIntegration googleIntegration;
 	private final OauthConfig oauthConfig;
 
-	public JwtService(GithubProperties githubProps, OauthUtils oauthUtils, UserRepository userRepository,
-			OauthProvidersRepository oauthProvidersRepository,
-			UserSessionRepository userSessionsRepository, ObjectMapper objectMapper,
-			GithubIntegration githubIntegration, OauthConfig oauthConfig) {
+	public JwtService(GithubProperties githubProps, GoogleProperties googleProps, OauthUtils oauthUtils,
+			UserRepository userRepository,
+			OauthProvidersRepository oauthProvidersRepository, UserSessionRepository userSessionsRepository,
+			ObjectMapper objectMapper, GithubIntegration githubIntegration,
+			GoogleIntegration googleIntegration, OauthConfig oauthConfig) {
 		this.githubProps = githubProps;
+		this.googleProps = googleProps;
 		this.oauthUtils = oauthUtils;
 		this.userRepository = userRepository;
 		this.oauthProvidersRepository = oauthProvidersRepository;
 		this.userSessionsRepository = userSessionsRepository;
 		this.objectMapper = objectMapper;
 		this.githubIntegration = githubIntegration;
+		this.googleIntegration = googleIntegration;
 		this.oauthConfig = oauthConfig;
 	}
 
@@ -67,6 +75,13 @@ public class JwtService {
 				GithubUser githubUserDto = githubIntegration.getUser(accessToken);
 				userDto = new OauthUserDTO(githubUserDto.id(), githubUserDto.email(),
 						githubUserDto.avatarUrl());
+				break;
+			}
+			case GOOGLE: {
+				String accessToken = googleIntegration.getAccessToken(code, googleProps);
+				GoogleUser googleUserDto = googleIntegration.getUser(accessToken);
+				userDto = new OauthUserDTO(googleUserDto.sub(), googleUserDto.email(),
+						googleUserDto.picture());
 				break;
 			}
 		}

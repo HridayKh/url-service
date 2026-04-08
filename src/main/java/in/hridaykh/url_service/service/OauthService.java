@@ -7,6 +7,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Service;
 
 import in.hridaykh.url_service.config.GithubProperties;
+import in.hridaykh.url_service.config.GoogleProperties;
 import in.hridaykh.url_service.config.OauthConfig;
 import in.hridaykh.url_service.dtos.oauth.InitiateFlowDTO;
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
@@ -19,13 +20,15 @@ import jakarta.transaction.Transactional;
 @Service
 public class OauthService {
 	private final GithubProperties githubProps;
+	private final GoogleProperties googleProps;
 	private final OauthUtils oauthUtils;
 	private final UserSessionRepository userSessionsRepository;
 	private final OauthConfig oauthConfig;
 
-	public OauthService(GithubProperties githubProps, OauthUtils oauthUtils,
+	public OauthService(GithubProperties githubProps, GoogleProperties googleProps, OauthUtils oauthUtils,
 			UserSessionRepository userSessionsRepository, OauthConfig oauthConfig) {
 		this.githubProps = githubProps;
+		this.googleProps = googleProps;
 		this.oauthUtils = oauthUtils;
 		this.userSessionsRepository = userSessionsRepository;
 		this.oauthConfig = oauthConfig;
@@ -37,6 +40,9 @@ public class OauthService {
 			case GITHUB -> authorizationUrl = "https://github.com/login/oauth/authorize?client_id="
 					+ githubProps.clientId() +
 					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GITHUB&scope=user:email&state=";
+			case GOOGLE -> authorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id="
+					+ googleProps.clientId() +
+					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GOOGLE&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email&state=";
 		}
 		String state = oauthUtils.generateState();
 		long expiryTime = System.currentTimeMillis() + Duration.ofMinutes(10).toMillis();
