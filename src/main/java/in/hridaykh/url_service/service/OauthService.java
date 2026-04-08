@@ -36,13 +36,14 @@ public class OauthService {
 
 	public InitiateFlowDTO initiateOauth(OauthProviderNames providerName) {
 		String authorizationUrl = "";
-		switch (providerName) {
+		switch (providerName) { 
 			case GITHUB -> authorizationUrl = "https://github.com/login/oauth/authorize?client_id="
 					+ githubProps.clientId() +
 					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GITHUB&scope=user:email&state=";
 			case GOOGLE -> authorizationUrl = "https://accounts.google.com/o/oauth2/v2/auth?client_id="
 					+ googleProps.clientId() +
-					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GOOGLE&response_type=code&scope=https://www.googleapis.com/auth/userinfo.email&state=";
+					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GOOGLE&response_type=code" + 
+					"&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile&state=";
 		}
 		String state = oauthUtils.generateState();
 		long expiryTime = System.currentTimeMillis() + Duration.ofMinutes(10).toMillis();

@@ -23,7 +23,7 @@ public class OauthProvider {
 	public OauthProvider() {
 	}
 
-	public OauthProvider(User user, OauthProviderNames providerName, long providerUserId, String providerPfp) {
+	public OauthProvider(User user, OauthProviderNames providerName, String providerUserId, String providerPfp) {
 		this.user = user;
 		this.providerName = providerName;
 		this.providerUserId = providerUserId;
@@ -43,7 +43,7 @@ public class OauthProvider {
 	private OauthProviderNames providerName;
 
 	@Column(nullable = false)
-	private long providerUserId;
+	private String providerUserId;
 
 	@Column
 	private String providerPfp;
