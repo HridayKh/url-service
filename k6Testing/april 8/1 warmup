@@ -1,0 +1,65 @@
+export const options = {
+	scenarios: {
+		warmup: {
+			executor: 'ramping-arrival-rate',
+			startRate: 5,
+			timeUnit: '1s',
+			preAllocatedVUs: 50,
+			maxVUs: 100,
+			stages: [
+				{ target: 10, duration: '30s' },
+				{ target: 30, duration: '1m' },
+				{ target: 70, duration: '1m' },
+				{ target: 100, duration: '1m' },
+			],
+		},
+	},
+	summaryTrendStats: ['avg', 'med', 'p(80)', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
+	thresholds: {
+		http_req_failed: [{ threshold: 'rate<0.05', abortOnFail: false }],
+		http_req_duration: [{ threshold: 'p(95)<1000', abortOnFail: false }],
+	},
+};
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=1.41s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.58%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 9209   38.370686/s
+    checks_succeeded...: 99.41% 9155 out of 9209
+    checks_failed......: 0.58%  54 out of 9209
+
+    ✗ status is 200
+      ↳  99% — ✓ 9155 / ✗ 54
+
+    HTTP
+    http_req_duration..............: avg=674.26ms med=521.52ms p(80)=858.4ms  p(90)=1.09s p(95)=1.41s p(99)=3.03s p(99.9)=16.08s
+      { expected_response:true }...: avg=667.47ms med=523.32ms p(80)=859.55ms p(90)=1.09s p(95)=1.41s p(99)=2.99s p(99.9)=15.84s
+    http_req_failed................: 0.58%   54 out of 9209
+    http_reqs......................: 9209    38.370686/s
+
+    EXECUTION
+    dropped_iterations.............: 297     1.237495/s
+    iteration_duration.............: avg=846.63ms med=529.51ms p(80)=870.5ms  p(90)=1.12s p(95)=1.52s p(99)=4.76s p(99.9)=30s   
+    iterations.....................: 9209    38.370686/s
+    vus............................: 18      min=3          max=100
+    vus_max........................: 100     min=50         max=100
+
+    NETWORK
+    data_received..................: 51 MB   212 kB/s
+    data_sent......................: 1000 kB 4.2 kB/s
+
+
+
+
+running (4m00.0s), 000/100 VUs, 9209 complete and 18 interrupted iterations
+warmup ✓ [======================================] 018/100 VUs  3m30s  100.00 iters/s
+ERRO[0240] thresholds on metrics 'http_req_duration' have been crossed 
+

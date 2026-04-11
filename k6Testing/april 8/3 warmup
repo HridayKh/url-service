@@ -1,0 +1,65 @@
+export const options = {
+	scenarios: {
+		warmup: {
+			executor: 'ramping-arrival-rate',
+			startRate: 5,
+			timeUnit: '1s',
+			preAllocatedVUs: 50,
+			maxVUs: 100,
+			stages: [
+				{ target: 10, duration: '30s' },
+				{ target: 30, duration: '1m' },
+				{ target: 70, duration: '1m' },
+				{ target: 100, duration: '1m' },
+			],
+		},
+	},
+	summaryTrendStats: ['avg', 'med', 'p(80)', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
+	thresholds: {
+		http_req_failed: [{ threshold: 'rate<0.05', abortOnFail: false }],
+		http_req_duration: [{ threshold: 'p(95)<1000', abortOnFail: false }],
+	},
+};
+
+	
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=675.43ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.58%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 9376   39.066456/s
+    checks_succeeded...: 99.41% 9321 out of 9376
+    checks_failed......: 0.58%  55 out of 9376
+
+    ✗ status is 200
+      ↳  99% — ✓ 9321 / ✗ 55
+
+    HTTP
+    http_req_duration..............: avg=350.4ms  med=192.29ms p(80)=313.72ms p(90)=348.22ms p(95)=675.43ms p(99)=2.55s p(99.9)=18.49s
+      { expected_response:true }...: avg=335.57ms med=192.5ms  p(80)=313.81ms p(90)=347.77ms p(95)=659.49ms p(99)=2.43s p(99.9)=15.89s
+    http_req_failed................: 0.58%  55 out of 9376
+    http_reqs......................: 9376   39.066456/s
+
+    EXECUTION
+    dropped_iterations.............: 125    0.520831/s
+    iteration_duration.............: avg=521.88ms med=193.31ms p(80)=316.27ms p(90)=366.73ms p(95)=992.6ms  p(99)=7.28s p(99.9)=30s   
+    iterations.....................: 9376   39.066456/s
+    vus............................: 23     min=5          max=100
+    vus_max........................: 100    min=50         max=100
+
+    NETWORK
+    data_received..................: 52 MB  216 kB/s
+    data_sent......................: 1.0 MB 4.2 kB/s
+
+
+
+
+running (4m00.0s), 000/100 VUs, 9376 complete and 23 interrupted iterations
+warmup ✓ [======================================] 023/100 VUs  3m30s  100.00 iters/s
+

@@ -1,0 +1,66 @@
+export const options = {
+	scenarios: {
+		warmup: {
+			executor: 'ramping-arrival-rate',
+			startRate: 5,
+			timeUnit: '1s',
+			preAllocatedVUs: 50,
+			maxVUs: 100,
+			stages: [
+				{ target: 10, duration: '30s' },
+				{ target: 30, duration: '1m' },
+				{ target: 70, duration: '1m' },
+				{ target: 100, duration: '1m' },
+			],
+		},
+	},
+	summaryTrendStats: ['avg', 'med', 'p(80)', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
+	thresholds: {
+		http_req_failed: [{ threshold: 'rate<0.05', abortOnFail: false }],
+		http_req_duration: [{ threshold: 'p(95)<1000', abortOnFail: false }],
+	},
+};
+
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✗ 'p(95)<1000' p(95)=1.78s
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.50%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 7675   32.678019/s
+    checks_succeeded...: 99.49% 7636 out of 7675
+    checks_failed......: 0.50%  39 out of 7675
+
+    ✗ status is 200
+      ↳  99% — ✓ 7636 / ✗ 39
+
+    HTTP
+    http_req_duration..............: avg=1.09s med=1.28s p(80)=1.58s p(90)=1.67s p(95)=1.78s p(99)=2.99s p(99.9)=7.78s
+      { expected_response:true }...: avg=1.1s  med=1.29s p(80)=1.59s p(90)=1.67s p(95)=1.78s p(99)=2.99s p(99.9)=7.8s 
+    http_req_failed................: 0.50%  39 out of 7675
+    http_reqs......................: 7675   32.678019/s
+
+    EXECUTION
+    dropped_iterations.............: 1849   7.872529/s
+    iteration_duration.............: avg=1.26s med=1.31s p(80)=1.59s p(90)=1.68s p(95)=1.87s p(99)=3.99s p(99.9)=30s  
+    iterations.....................: 7675   32.678019/s
+    vus............................: 1      min=1          max=100
+    vus_max........................: 100    min=50         max=100
+
+    NETWORK
+    data_received..................: 69 MB  293 kB/s
+    data_sent......................: 873 kB 3.7 kB/s
+
+
+
+
+running (3m54.9s), 000/100 VUs, 7675 complete and 0 interrupted iterations
+warmup ✓ [======================================] 000/100 VUs  3m30s  100.00 iters/s
+ERRO[0235] thresholds on metrics 'http_req_duration' have been crossed 
+

@@ -6,14 +6,11 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
 import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import in.hridaykh.url_service.config.JwtAuthPaths;
 import in.hridaykh.url_service.config.OauthConfig;
-import in.hridaykh.url_service.exception.SessionExpiredException;
 import in.hridaykh.url_service.model.oauth.TokenPair;
 import in.hridaykh.url_service.model.oauth.UserJwtPayload;
 import in.hridaykh.url_service.model.tables.User;

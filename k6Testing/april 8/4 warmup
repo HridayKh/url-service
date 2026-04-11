@@ -1,0 +1,63 @@
+export const options = {
+	scenarios: {
+		warmup: {
+			executor: 'ramping-arrival-rate',
+			startRate: 5,
+			timeUnit: '1s',
+			preAllocatedVUs: 50,
+			maxVUs: 100,
+			stages: [
+				{ target: 10, duration: '30s' },
+				{ target: 30, duration: '1m' },
+				{ target: 70, duration: '1m' },
+				{ target: 100, duration: '1m' },
+			],
+		},
+	},
+	summaryTrendStats: ['avg', 'med', 'p(80)', 'p(90)', 'p(95)', 'p(99)', 'p(99.9)'],
+	thresholds: {
+		http_req_failed: [{ threshold: 'rate<0.05', abortOnFail: false }],
+		http_req_duration: [{ threshold: 'p(95)<1000', abortOnFail: false }],
+	},
+};
+
+  █ THRESHOLDS 
+
+    http_req_duration
+    ✓ 'p(95)<1000' p(95)=339.48ms
+
+    http_req_failed
+    ✓ 'rate<0.05' rate=0.29%
+
+
+  █ TOTAL RESULTS 
+
+    checks_total.......: 9524   44.941868/s
+    checks_succeeded...: 99.70% 9496 out of 9524
+    checks_failed......: 0.29%  28 out of 9524
+
+    ✗ status is 200
+      ↳  99% — ✓ 9496 / ✗ 28
+
+    HTTP
+    http_req_duration..............: avg=229.27ms med=178.62ms p(80)=232.57ms p(90)=325.03ms p(95)=339.48ms p(99)=1.32s p(99.9)=2.6s
+      { expected_response:true }...: avg=229.95ms med=178.67ms p(80)=233.11ms p(90)=325.13ms p(95)=339.56ms p(99)=1.32s p(99.9)=2.6s
+    http_req_failed................: 0.29%  28 out of 9524
+    http_reqs......................: 9524   44.941868/s
+
+    EXECUTION
+    iteration_duration.............: avg=322.9ms  med=178.97ms p(80)=243.57ms p(90)=326.65ms p(95)=342.97ms p(99)=1.64s p(99.9)=30s 
+    iterations.....................: 9524   44.941868/s
+    vus............................: 2      min=2          max=25
+    vus_max........................: 50     min=50         max=50
+
+    NETWORK
+    data_received..................: 52 MB  247 kB/s
+    data_sent......................: 885 kB 4.2 kB/s
+
+
+
+
+running (3m31.9s), 000/050 VUs, 9524 complete and 0 interrupted iterations
+warmup ✓ [======================================] 000/050 VUs  3m30s  100.00 iters/s
+
