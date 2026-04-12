@@ -2,8 +2,9 @@ package in.hridaykh.url_service.model.tables;
 
 import java.time.LocalDateTime;
 
-import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
 import jakarta.persistence.Column;
@@ -40,8 +41,9 @@ public class OauthProvider {
 	private User user;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "provider_name", columnDefinition = "urldb.oauth_providers_provider_names")
-	@ColumnTransformer(write = "?::urldb.oauth_providers_provider_names")
+	@Column(name = "provider_name", columnDefinition = "urldb.oauth_providers_provider_name")
+	// @ColumnTransformer(write = "?::urldb.oauth_providers_provider_name")
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	private OauthProviderNames providerName;
 
 	@Column(nullable = false)

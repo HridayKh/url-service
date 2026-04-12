@@ -1,7 +1,0 @@
-<ul id="providerList" th:fragment="provider-list">
-	<li th:each="provider : ${providers}">
-		<a th:href="@{'/oauth/initiate/' + ${provider}}">
-			<span th:text="${#strings.capitalize(#strings.toLowerCase(provider))}">Provider</span>
-		</a>
-	</li>
-</ul>

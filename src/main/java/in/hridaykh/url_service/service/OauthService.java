@@ -44,7 +44,7 @@ public class OauthService {
 					+ googleProps.clientId() +
 					"&redirect_uri=https://urls.HridayKh.in/oauth/callback/GOOGLE&response_type=code" + 
 					"&scope=https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile&state=";
-		}
+				}
 		String state = oauthUtils.generateState();
 		long expiryTime = System.currentTimeMillis() + Duration.ofMinutes(10).toMillis();
 

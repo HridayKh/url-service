@@ -120,7 +120,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 				"default-src 'self'; " +
 						"script-src 'self' 'unsafe-inline' https://cloud.umami.is; " +
 						"style-src 'self' 'unsafe-inline'; " +
-						"img-src 'self' data: https://avatars.githubusercontent.com; " +
+						"img-src 'self' data: https://avatars.githubusercontent.com https://lh3.googleusercontent.com; " +
 						"connect-src 'self' https://api-gateway.umami.dev https://cloud.umami.is;");
 		res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 	}

@@ -42,7 +42,7 @@
 	</section>
 
 	<section id="auth-modal">
-		<dialog id="providerListModal" hx-get="/oauth" hx-trigger="intersect once" hx-target="#providerList">
+		<dialog id="providerListModal">
 			<article>
 				<header>
 					<button aria-label="Close" rel="prev"
@@ -53,7 +53,8 @@
 					</p>
 				</header>
 				<ul id="providerList">
-					<p>Loading providers...</p>
+					<li> <a href="/oauth/initiate/GOOGLE"> Google </a> </li>
+					<li> <a href="/oauth/initiate/GITHUB"> Github </a> </li>
 				</ul>
 			</article>
 		</dialog>

@@ -36,12 +36,6 @@ public class OauthController {
 		this.jwtService = jwtService;
 	}
 
-	@GetMapping("/oauth")
-	public String getProviderFragment(Model model) {
-		model.addAttribute("providers", OauthProviderNames.values());
-		return ViewRegistry.Fragments.oauthList;
-	}
-
 	@GetMapping("/oauth/initiate/{providerName}")
 	public String oauthInitiate(@PathVariable OauthProviderNames providerName, HttpServletResponse response) {
 		InitiateFlowDTO initiateFlowDto = oauthService.initiateOauth(providerName);
