@@ -5,6 +5,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
@@ -31,7 +32,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "urls", indexes = {
 		@Index(name = "idx_short_url", columnList = "short_url", unique = true)
-})
+}, schema = "urldb")
 public class Url {
 
 	@Id
@@ -56,7 +57,9 @@ public class Url {
 	private Map<String, Object> qrMetadata;
 
 	@Enumerated(EnumType.STRING)
-	@Column(nullable = false)
+	@Column(nullable = false, columnDefinition = "urldb.urls_expiry_type")
+	// @ColumnTransformer(write = "?::urldb.urls_expiry_type")
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	private ExpiryType expiryType;
 
 	@Column
@@ -84,6 +87,9 @@ public class Url {
 	private LocalDateTime deletedAt;
 
 	@Enumerated(EnumType.STRING)
+	@Column(columnDefinition = "urldb.urls_delete_reason")
+	// @ColumnTransformer(write = "?::urldb.urls_delete_reason")
+	@JdbcTypeCode(SqlTypes.NAMED_ENUM)
 	private DeleteReason deleteReason;
 
 	@CreationTimestamp

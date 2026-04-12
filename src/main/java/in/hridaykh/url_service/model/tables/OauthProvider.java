@@ -2,6 +2,7 @@ package in.hridaykh.url_service.model.tables;
 
 import java.time.LocalDateTime;
 
+import org.hibernate.annotations.ColumnTransformer;
 import org.hibernate.annotations.CreationTimestamp;
 
 import in.hridaykh.url_service.model.enums.OauthProviderNames;
@@ -18,7 +19,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "oauth_providers")
+@Table(name = "oauth_providers", schema = "urldb")
 public class OauthProvider {
 	public OauthProvider() {
 	}
@@ -39,7 +40,8 @@ public class OauthProvider {
 	private User user;
 
 	@Enumerated(EnumType.STRING)
-	@Column(name = "provider_name")
+	@Column(name = "provider_name", columnDefinition = "urldb.oauth_providers_provider_names")
+	@ColumnTransformer(write = "?::urldb.oauth_providers_provider_names")
 	private OauthProviderNames providerName;
 
 	@Column(nullable = false)

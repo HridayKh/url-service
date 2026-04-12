@@ -21,17 +21,17 @@ import in.hridaykh.url_service.repository.ShortUrlRepository;
 @Service
 public class CacheService {
 	private final Cache<String, UrlRedirDTO> urlRedirCache = Caffeine.newBuilder()
-			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.expireAfterWrite(1, TimeUnit.MINUTES)
 			.maximumSize(100)
 			.build();
 
 	private final Cache<Long, UrlsList[]> urlListCache = Caffeine.newBuilder()
-			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.expireAfterWrite(30, TimeUnit.SECONDS)
 			.maximumSize(100)
 			.build();
 
 	private final Cache<Long, DeletedUrlsList[]> deletedUrlList = Caffeine.newBuilder()
-			.expireAfterWrite(10, TimeUnit.MINUTES)
+			.expireAfterWrite(30, TimeUnit.SECONDS)
 			.maximumSize(100)
 			.build();
 

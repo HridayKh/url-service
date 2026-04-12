@@ -1,5 +1,6 @@
 package in.hridaykh.url_service.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,32 +32,27 @@ public interface ShortUrlRepository extends JpaRepository<Url, Long> {
 	@Modifying
 	@Transactional
 	@Query(value = """
-			UPDATE urls
-			SET is_active = 0,
-			    is_deleted = 1,
-			    delete_reason = 'EXPIRED',
+			UPDATE urldb.urls
+			SET is_active = false,
+			    is_deleted = true,
+			    delete_reason = 'EXPIRED'::urldb.urls_delete_reason,
 			    deleted_at = NOW()
-			WHERE is_active = 1
-			AND is_deleted = 0
+			WHERE is_deleted = false
 			AND (
 			    (expiry_type = 'TIME' AND expiry_time <= NOW())
 			    OR
 			    (expiry_type = 'USAGE' AND click_count >= expiry_max_clicks)
 			    OR
 			    (expiry_type = 'INACTIVITY' AND
-			        TIMESTAMPDIFF(SECOND, COALESCE(last_clicked_at, created_at), NOW()) >= expiry_inactivity_duration_seconds
+			        EXTRACT(EPOCH FROM (NOW() - COALESCE(last_clicked_at, created_at))) >= expiry_inactivity_duration_seconds
 			    )
-			)
+			);
 			""", nativeQuery = true)
-	int softDeleteExpiredUrls();
+	int softDeleteExpiredUrlsPOSTGRESS();
 
 	@Modifying
 	@Transactional
-	@Query(value = """
-			DELETE FROM urls
-			WHERE is_deleted = 1
-			AND deleted_at <= (NOW() - INTERVAL 30 DAY)
-			""", nativeQuery = true)
-	int hardDeleteOldUrls();
+	@Query("DELETE FROM Url u WHERE u.isDeleted = true AND u.deletedAt <= :cutoffDate")
+	int hardDeleteOldUrls(@Param("cutoffDate") LocalDateTime cutoffDate);
 
 }
